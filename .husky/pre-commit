@@ -1,0 +1,40 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "自動遞增版本號..."
+# 讀取當前版本號
+CURRENT_VERSION=$(node -p "require('./package.json').version")
+echo "當前版本: $CURRENT_VERSION"
+
+# 使用 pnpm version patch 自動遞增版本號（不建立 git tag）
+pnpm version patch --no-git-tag-version
+
+# 讀取新版本號
+NEW_VERSION=$(node -p "require('./package.json').version")
+echo "新版本: $NEW_VERSION"
+
+# 將 package.json 的變更加入當前提交
+git add package.json
+
+echo "檢查程式碼格式化..."
+# 取得暫存檔案列表
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|js|svelte)$' | tr '\n' ' ')
+
+if [ -z "$STAGED_FILES" ]; then
+  echo "沒有暫存的程式碼檔案需要檢查"
+else
+  echo "檢查暫存檔案: $STAGED_FILES"
+
+  if ! pnpm exec prettier --check $STAGED_FILES; then
+    echo "錯誤：程式碼格式化檢查失敗，請執行 'pnpm format' 後再提交"
+    exit 1
+  fi
+
+  echo "檢查程式碼品質..."
+  if ! pnpm exec eslint $STAGED_FILES; then
+    echo "錯誤：程式碼檢查失敗，請修正後再提交"
+    exit 1
+  fi
+fi
+
+echo "所有檢查通過"
