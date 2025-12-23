@@ -16,6 +16,7 @@
 	let renderer: THREE.WebGLRenderer
 	let controls: OrbitControls
 	let animationFrameId: number
+	let resizeObserver: ResizeObserver
 
 	// Initialize Three.js scene
 	function initScene() {
@@ -26,14 +27,15 @@
 		scene.background = new THREE.Color(0xf0f0f0)
 		scene.fog = new THREE.Fog(0xf0f0f0, 100, 500)
 
-		// Create camera
+		// Create camera (Perspective, but we'll position it for isometric feel)
 		camera = new THREE.PerspectiveCamera(
-			60,
+			45, // Narrower FOV for flatter look
 			canvasRef.clientWidth / canvasRef.clientHeight,
 			0.1,
-			1000
+			2000
 		)
-		camera.position.set(20, 20, 20)
+		// Initial 45-degree iso position
+		camera.position.set(50, 50, 50)
 
 		// Create renderer
 		renderer = new THREE.WebGLRenderer({
@@ -119,15 +121,20 @@
 			initScene()
 			animate()
 
-			// Add resize listener
-			window.addEventListener('resize', handleResize)
+			// Setup ResizeObserver
+			resizeObserver = new ResizeObserver(() => {
+				handleResize()
+			})
+			resizeObserver.observe(canvasRef)
 
-			// Load model
-			modelStore.loadModel(modelUrl)
+			// Load model (initial only)
+			if (!modelStore.model) {
+				modelStore.loadModel(modelUrl)
+			}
 
 			// Cleanup
 			return () => {
-				window.removeEventListener('resize', handleResize)
+				resizeObserver?.disconnect()
 				cancelAnimationFrame(animationFrameId)
 				controls?.dispose()
 				renderer?.dispose()
@@ -148,27 +155,125 @@
 			const model = modelStore.model
 			model.userData.isModel = true
 
+			// Ensure all meshes are searchable by name and have original materials stored
+			model.traverse((child) => {
+				if (child instanceof THREE.Mesh) {
+					child.userData.originalMaterial = child.material
+					child.userData.originalOpacity = child.material.opacity
+					child.userData.originalTransparent = child.material.transparent
+				}
+			})
+
 			// Center the model
 			const box = new THREE.Box3().setFromObject(model)
 			const center = box.getCenter(new THREE.Vector3())
 			model.position.sub(center)
 
-			// Scale the model to fit in view
-			const size = box.getSize(new THREE.Vector3())
-			const maxDim = Math.max(size.x, size.y, size.z)
-			const scale = 10 / maxDim // Target size of 10 units
-			model.scale.setScalar(scale)
-
 			scene.add(model)
 
-			// Adjust camera position based on model size
-			const distance = maxDim * 2
-			camera.position.set(distance, distance * 0.7, distance)
-			camera.lookAt(0, 0, 0)
+			// Initial 45-degree isometric view
+			resetCameraView()
 
 			console.log('[BIMViewer] Model added to scene')
 		}
 	})
+
+	function resetCameraView() {
+		if (!scene || !camera || !controls) return
+
+		const model = scene.children.find((child) => child.userData.isModel)
+		if (!model) return
+
+		const box = new THREE.Box3().setFromObject(model)
+		const size = box.getSize(new THREE.Vector3())
+		const maxDim = Math.max(size.x, size.y, size.z)
+		const distance = maxDim * 2.5
+
+		// Position camera at 45/45 degree
+		camera.position.set(distance, distance, distance)
+		controls.target.set(0, 0, 0)
+		camera.lookAt(0, 0, 0)
+		controls.update()
+	}
+
+	/**
+	 * Fly to a specific object by name or UUID
+	 */
+	export function flyTo(objectName: string) {
+		if (!scene || !camera || !controls) return
+
+		const model = scene.children.find((child) => child.userData.isModel)
+		if (!model) return
+
+		let target: THREE.Object3D | undefined
+		model.traverse((child) => {
+			if (child.name === objectName || child.uuid === objectName) {
+				target = child
+			}
+		})
+
+		if (target) {
+			applyXray(target)
+
+			const box = new THREE.Box3().setFromObject(target)
+			const center = box.getCenter(new THREE.Vector3())
+			const size = box.getSize(new THREE.Vector3())
+
+			// Pan camera to the object's center without changing orientation (mostly)
+			// For AC-4 "不得被裁切", we adjust distance
+			const maxDim = Math.max(size.x, size.y, size.z)
+			const distance = Math.max(maxDim * 3, 5)
+
+			const direction = new THREE.Vector3().copy(camera.position).sub(controls.target).normalize()
+
+			const newPos = new THREE.Vector3().copy(center).add(direction.multiplyScalar(distance))
+
+			// Simple fly animation or immediate move
+			camera.position.copy(newPos)
+			controls.target.copy(center)
+			controls.update()
+		}
+	}
+
+	function applyXray(target: THREE.Object3D) {
+		const model = scene.children.find((child) => child.userData.isModel)
+		if (!model) return
+
+		model.traverse((child) => {
+			if (child instanceof THREE.Mesh) {
+				if (child === target || isDescendant(target, child)) {
+					// Highlight
+					child.material = child.userData.originalMaterial
+				} else {
+					// X-ray
+					const xrayMaterial = child.userData.originalMaterial.clone()
+					xrayMaterial.transparent = true
+					xrayMaterial.opacity = 0.1
+					child.material = xrayMaterial
+				}
+			}
+		})
+	}
+
+	export function resetXray() {
+		const model = scene.children.find((child) => child.userData.isModel)
+		if (!model) return
+
+		model.traverse((child) => {
+			if (child instanceof THREE.Mesh && child.userData.originalMaterial) {
+				child.material = child.userData.originalMaterial
+			}
+		})
+	}
+
+	function isDescendant(parent: THREE.Object3D, child: THREE.Object3D): boolean {
+		let node = child.parent
+		while (node) {
+			if (node === parent) return true
+			node = node.parent
+		}
+		return false
+	}
 </script>
 
 <canvas bind:this={canvasRef} class="viewer-canvas"></canvas>

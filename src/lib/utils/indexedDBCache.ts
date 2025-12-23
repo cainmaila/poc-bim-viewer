@@ -8,6 +8,10 @@ interface ModelCacheDB extends DBSchema {
 		key: string
 		value: ArrayBuffer
 	}
+	settings: {
+		key: string
+		value: string
+	}
 }
 
 const DB_NAME = 'bim-viewer-cache'
@@ -23,6 +27,10 @@ async function getDB(): Promise<IDBPDatabase<ModelCacheDB>> {
 			// Create the models object store if it doesn't exist
 			if (!db.objectStoreNames.contains(STORE_NAME)) {
 				db.createObjectStore(STORE_NAME)
+			}
+			// Create the settings object store if it doesn't exist
+			if (!db.objectStoreNames.contains('settings')) {
+				db.createObjectStore('settings')
 			}
 		}
 	})
@@ -109,5 +117,33 @@ export async function getCachedModelKeys(): Promise<string[]> {
 	} catch (error) {
 		console.error('[IndexedDB] Failed to get cached model keys:', error)
 		return []
+	}
+}
+/**
+ * Set the key of the active model
+ * @param key - The model identifier
+ */
+export async function setActiveModelKey(key: string): Promise<void> {
+	try {
+		const db = await getDB()
+		await db.put('settings', key, 'activeModelKey')
+		console.log(`[IndexedDB] Active model key set to: ${key}`)
+	} catch (error) {
+		console.error('[IndexedDB] Failed to set active model key:', error)
+	}
+}
+
+/**
+ * Get the key of the active model
+ * @returns The active model key, or null if not set
+ */
+export async function getActiveModelKey(): Promise<string | null> {
+	try {
+		const db = await getDB()
+		const key = await db.get('settings', 'activeModelKey')
+		return key || null
+	} catch (error) {
+		console.error('[IndexedDB] Failed to get active model key:', error)
+		return null
 	}
 }

@@ -1,5 +1,16 @@
 import * as THREE from 'three'
-import { loadGLBModel } from '../utils/gltfLoader'
+import { loadGLBModel, loadGLBFromFile } from '../utils/gltfLoader'
+import { setActiveModelKey, saveModelToCache } from '../utils/indexedDBCache'
+
+/**
+ * Tree item structure for sidebar navigation
+ */
+export interface TreeItem {
+	id: string
+	name: string
+	type: string
+	children: TreeItem[]
+}
 
 /**
  * Model cache state using Svelte 5 Runes
@@ -11,6 +22,7 @@ class ModelCacheStore {
 	private _model = $state<THREE.Group | null>(null)
 	private _error = $state<string | null>(null)
 	private _fromCache = $state(false)
+	private _treeData = $state<TreeItem[]>([])
 
 	// Getters for reactive state access
 	get isLoading() {
@@ -29,8 +41,16 @@ class ModelCacheStore {
 		return this._error
 	}
 
+	set error(msg: string | null) {
+		this._error = msg
+	}
+
 	get fromCache() {
 		return this._fromCache
+	}
+
+	get treeData() {
+		return this._treeData
 	}
 
 	/**
@@ -43,6 +63,8 @@ class ModelCacheStore {
 		this._error = null
 		this._fromCache = false
 
+		const cacheKey = url.split('/').pop() || url
+
 		try {
 			const result = await loadGLBModel(url, (progress) => {
 				this._loadProgress = Math.round(progress)
@@ -51,6 +73,12 @@ class ModelCacheStore {
 			this._model = result.scene
 			this._fromCache = result.fromCache
 
+			// Save as active model key
+			await setActiveModelKey(cacheKey)
+
+			// Generate tree data
+			this._treeData = this.generateTreeData(this._model!)
+
 			console.log(
 				`[ModelCache] Model loaded successfully (from ${result.fromCache ? 'cache' : 'network'})`
 			)
@@ -58,6 +86,42 @@ class ModelCacheStore {
 			const errorMessage = e instanceof Error ? e.message : '載入模型失敗'
 			this._error = errorMessage
 			console.error('[ModelCache] Failed to load model:', e)
+		} finally {
+			this._isLoading = false
+		}
+	}
+
+	/**
+	 * Load a GLB model from a local file
+	 * @param file - The file object
+	 */
+	async loadModelFromFile(file: File): Promise<void> {
+		this._isLoading = true
+		this._loadProgress = 0
+		this._error = null
+		this._fromCache = false
+
+		try {
+			const result = await loadGLBFromFile(file, (progress) => {
+				this._loadProgress = Math.round(progress)
+			})
+
+			this._model = result.scene
+			this._fromCache = false
+
+			// Save to cache and set as active
+			const arrayBuffer = await file.arrayBuffer()
+			await saveModelToCache(file.name, arrayBuffer)
+			await setActiveModelKey(file.name)
+
+			// Generate tree data
+			this._treeData = this.generateTreeData(this._model!)
+
+			console.log(`[ModelCache] Model loaded from file and cached: ${file.name}`)
+		} catch (e) {
+			const errorMessage = e instanceof Error ? e.message : '解析模型失敗'
+			this._error = errorMessage
+			console.error('[ModelCache] Failed to load model from file:', e)
 		} finally {
 			this._isLoading = false
 		}
@@ -85,8 +149,30 @@ class ModelCacheStore {
 		this._loadProgress = 0
 		this._error = null
 		this._fromCache = false
+		this._treeData = []
 
 		console.log('[ModelCache] Model cleared')
+	}
+
+	/**
+	 * Generate hierarchical tree data from Three.js model
+	 * @param object - The root object
+	 * @returns Array of tree items
+	 */
+	private generateTreeData(object: THREE.Object3D): TreeItem[] {
+		const items: TreeItem[] = []
+
+		object.children.forEach((child) => {
+			const item: TreeItem = {
+				id: child.uuid,
+				name: child.name || child.type,
+				type: child.type,
+				children: this.generateTreeData(child)
+			}
+			items.push(item)
+		})
+
+		return items
 	}
 
 	/**

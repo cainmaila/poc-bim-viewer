@@ -71,6 +71,30 @@ export async function loadGLBModel(
 }
 
 /**
+ * Load a GLB model from a local File object
+ * @param file - The File object to load
+ * @param onProgress - Optional progress callback
+ */
+export async function loadGLBFromFile(
+	file: File,
+	onProgress?: ProgressCallback
+): Promise<LoadResult> {
+	try {
+		onProgress?.(0)
+		const arrayBuffer = await file.arrayBuffer()
+		onProgress?.(50)
+
+		const scene = await parseGLBFromArrayBuffer(arrayBuffer)
+		onProgress?.(100)
+
+		return { scene, fromCache: false }
+	} catch (error) {
+		console.error('[GLBLoader] Failed to load model from file:', error)
+		throw error
+	}
+}
+
+/**
  * Download a GLB file from a URL
  * @param url - The URL to download from
  * @param onProgress - Optional progress callback (0-1)
