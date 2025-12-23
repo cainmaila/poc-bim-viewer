@@ -4,11 +4,10 @@
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 
 	interface Props {
-		modelUrl: string
 		autoRotate?: boolean
 	}
 
-	let { modelUrl, autoRotate = false }: Props = $props()
+	let { autoRotate = false }: Props = $props()
 
 	let canvasRef = $state<HTMLCanvasElement | null>(null)
 	let scene: THREE.Scene
@@ -126,11 +125,6 @@
 				handleResize()
 			})
 			resizeObserver.observe(canvasRef)
-
-			// 載入模型（僅初始）
-			if (!modelStore.model) {
-				modelStore.loadModel(modelUrl)
-			}
 
 			// 清理
 			return () => {

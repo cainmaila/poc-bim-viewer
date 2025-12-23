@@ -16,23 +16,14 @@
 		if (activeKey) {
 			const cachedData = await getModelFromCache(activeKey)
 			if (cachedData) {
-				// 如果它是基於URL的鍵（如building.glb），我們可以使用loadModel
-				// 但目前最簡單的是如果它是預設的就載入URL
-				// 或者如果它是檔案，我們可能需要不同的方法。
-				// 對於v2.0，如果它在快取中，我們就告訴store按鍵載入。
-				// 等等，store目前接受URL。讓我們修復那個或在這裡處理。
-				if (activeKey === 'building.glb') {
-					await modelStore.loadModel(defaultModelUrl)
-				} else {
-					// 它是檔案鍵，讓我們從快取載入
-					// （假設store可以直接處理從ArrayBuffer解析，
-					// 但讓我們目前堅持最簡單的流程：如果快取失敗就載入預設）
-					await modelStore.loadModel(defaultModelUrl)
-				}
+				// 從緩存載入模型
+				await modelStore.loadModelFromCache(activeKey)
 			} else {
+				// 緩存中沒有數據，載入預設模型
 				await modelStore.loadModel(defaultModelUrl)
 			}
 		} else {
+			// 沒有active key，載入預設模型
 			await modelStore.loadModel(defaultModelUrl)
 		}
 	})
@@ -85,7 +76,7 @@
 	aria-label="BIM Viewer"
 >
 	<div class="viewer-wrapper">
-		<BIMViewer bind:this={viewerRef} modelUrl={defaultModelUrl} autoRotate={false} />
+		<BIMViewer bind:this={viewerRef} autoRotate={false} />
 	</div>
 
 	<div class="sidebar-wrapper">

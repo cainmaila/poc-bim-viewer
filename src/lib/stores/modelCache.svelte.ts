@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { loadGLBModel, loadGLBFromFile } from '../utils/gltfLoader'
-import { setActiveModelKey, saveModelToCache } from '../utils/indexedDBCache'
+import { setActiveModelKey, saveModelToCache, getModelFromCache } from '../utils/indexedDBCache'
 
 /**
  * Tree item structure for sidebar navigation
@@ -122,6 +122,48 @@ class ModelCacheStore {
 			const errorMessage = e instanceof Error ? e.message : '解析模型失敗'
 			this._error = errorMessage
 			console.error('[ModelCache] Failed to load model from file:', e)
+		} finally {
+			this._isLoading = false
+		}
+	}
+
+	/**
+	 * Load a GLB model from IndexedDB cache by key
+	 * @param cacheKey - The cache key
+	 */
+	async loadModelFromCache(cacheKey: string): Promise<void> {
+		this._isLoading = true
+		this._loadProgress = 0
+		this._error = null
+		this._fromCache = true
+
+		try {
+			const cachedData = await getModelFromCache(cacheKey)
+			if (!cachedData) {
+				throw new Error('模型不在緩存中')
+			}
+
+			this._loadProgress = 50
+
+			// Parse from ArrayBuffer
+			const result = await loadGLBFromFile(
+				new File([cachedData], cacheKey, { type: 'model/gltf-binary' }),
+				(progress) => {
+					this._loadProgress = 50 + Math.round(progress * 0.5)
+				}
+			)
+
+			this._model = result.scene
+			this._fromCache = true
+
+			// Generate tree data
+			this._treeData = this.generateTreeData(this._model!)
+
+			console.log(`[ModelCache] Model loaded from cache: ${cacheKey}`)
+		} catch (e) {
+			const errorMessage = e instanceof Error ? e.message : '從緩存載入模型失敗'
+			this._error = errorMessage
+			console.error('[ModelCache] Failed to load model from cache:', e)
 		} finally {
 			this._isLoading = false
 		}
