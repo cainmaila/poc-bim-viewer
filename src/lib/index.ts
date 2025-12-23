@@ -1,1 +1,1 @@
-// place files you want to import through the `$lib` alias in this folder.
+// 將您想要通過 `$lib` 別名匯入的檔案放在此資料夾中。

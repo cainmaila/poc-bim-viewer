@@ -16,17 +16,17 @@
 		if (activeKey) {
 			const cachedData = await getModelFromCache(activeKey)
 			if (cachedData) {
-				// If it's a URL-based key (like building.glb), we can use loadModel
-				// but for now, the simplest is to load the URL if it's the default
-				// or if it was a file, we might need a different approach.
-				// For v2.0, if it's in cache, we just tell the store to load it by key.
-				// Wait, the store currently takes a URL. Let's fix that or handle it here.
+				// 如果它是基於URL的鍵（如building.glb），我們可以使用loadModel
+				// 但目前最簡單的是如果它是預設的就載入URL
+				// 或者如果它是檔案，我們可能需要不同的方法。
+				// 對於v2.0，如果它在快取中，我們就告訴store按鍵載入。
+				// 等等，store目前接受URL。讓我們修復那個或在這裡處理。
 				if (activeKey === 'building.glb') {
 					await modelStore.loadModel(defaultModelUrl)
 				} else {
-					// It's a file key, let's load from cache
-					// (Assuming the store can handle parsing from ArrayBuffer directly,
-					// but let's stick to the simplest flow for now: load the default if cache fails)
+					// 它是檔案鍵，讓我們從快取載入
+					// （假設store可以直接處理從ArrayBuffer解析，
+					// 但讓我們目前堅持最簡單的流程：如果快取失敗就載入預設）
 					await modelStore.loadModel(defaultModelUrl)
 				}
 			} else {
@@ -56,14 +56,14 @@
 		const file = files[0]
 		if (!file.name.toLowerCase().endsWith('.glb')) {
 			modelStore.clearError()
-			// Set a temporary error
+			// 設定臨時錯誤
 			modelStore.error = '檔案格式錯誤，請使用 .glb 模型'
 			return
 		}
 
 		if (file.size > 50 * 1024 * 1024) {
 			modelStore.clearError()
-			// Set a temporary error
+			// 設定臨時錯誤
 			modelStore.error = '模型過大，建議處理素材(>50MB)'
 			return
 		}
@@ -143,14 +143,14 @@
 		left: 0;
 		bottom: 0;
 		z-index: 10;
-		pointer-events: none; /* Let events pass through the wrapper */
-		display: flex; /* Allow child to size itself */
+		pointer-events: none; /* 讓事件穿過包裝器 */
+		display: flex; /* 允許子元素自行調整大小 */
 	}
 
-	/* We need to ensure Sidebar itself captures pointer events */
+	/* 我們需要確保Sidebar本身捕獲指針事件 */
 	:global(.sidebar) {
 		pointer-events: auto;
-		box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+		box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1); /* 添加陰影以增加深度 */
 	}
 
 	.error-message {

@@ -24,11 +24,11 @@ const STORE_NAME = 'models'
 async function getDB(): Promise<IDBPDatabase<ModelCacheDB>> {
 	return openDB<ModelCacheDB>(DB_NAME, DB_VERSION, {
 		upgrade(db) {
-			// Create the models object store if it doesn't exist
+			// 如果不存在，創建models物件存儲
 			if (!db.objectStoreNames.contains(STORE_NAME)) {
 				db.createObjectStore(STORE_NAME)
 			}
-			// Create the settings object store if it doesn't exist
+			// 如果不存在，創建settings物件存儲
 			if (!db.objectStoreNames.contains('settings')) {
 				db.createObjectStore('settings')
 			}

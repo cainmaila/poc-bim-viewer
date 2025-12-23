@@ -18,26 +18,26 @@
 	let animationFrameId: number
 	let resizeObserver: ResizeObserver
 
-	// Initialize Three.js scene
+	// 初始化Three.js場景
 	function initScene() {
 		if (!canvasRef) return
 
-		// Create scene
+		// 創建場景
 		scene = new THREE.Scene()
 		scene.background = new THREE.Color(0xf0f0f0)
 		scene.fog = new THREE.Fog(0xf0f0f0, 100, 500)
 
-		// Create camera (Perspective, but we'll position it for isometric feel)
+		// 創建相機（透視，但我們將定位為等距感覺）
 		camera = new THREE.PerspectiveCamera(
-			45, // Narrower FOV for flatter look
+			45, // 較窄的FOV以獲得更平坦的外觀
 			canvasRef.clientWidth / canvasRef.clientHeight,
 			0.1,
 			2000
 		)
-		// Initial 45-degree iso position
+		// 初始45度等距位置
 		camera.position.set(50, 50, 50)
 
-		// Create renderer
+		// 創建渲染器
 		renderer = new THREE.WebGLRenderer({
 			canvas: canvasRef,
 			antialias: true,
@@ -48,7 +48,7 @@
 		renderer.shadowMap.enabled = true
 		renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
-		// Create controls
+		// 創建控制項
 		controls = new OrbitControls(camera, renderer.domElement)
 		controls.enableDamping = true
 		controls.dampingFactor = 0.05
@@ -56,25 +56,25 @@
 		controls.autoRotateSpeed = 0.5
 		controls.maxPolarAngle = Math.PI / 2
 
-		// Add lights
+		// 添加燈光
 		setupLights()
 
-		// Add grid helper
+		// 添加網格助手
 		const gridHelper = new THREE.GridHelper(100, 100, 0xcccccc, 0xe0e0e0)
 		scene.add(gridHelper)
 
-		// Add axes helper (optional, for debugging)
+		// 添加軸助手（可選，用於調試）
 		// const axesHelper = new THREE.AxesHelper(10)
 		// scene.add(axesHelper)
 	}
 
-	// Setup lighting
+	// 設定燈光
 	function setupLights() {
-		// Ambient light for base illumination
+		// 環境光用於基礎照明
 		const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
 		scene.add(ambientLight)
 
-		// Main directional light (sun-like)
+		// 主要方向光（類似太陽）
 		const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
 		directionalLight.position.set(50, 50, 50)
 		directionalLight.castShadow = true
@@ -86,12 +86,12 @@
 		directionalLight.shadow.mapSize.height = 2048
 		scene.add(directionalLight)
 
-		// Hemisphere light for soft ambient lighting
+		// 半球光用於柔和環境照明
 		const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4)
 		scene.add(hemisphereLight)
 	}
 
-	// Handle window resize
+	// 處理視窗調整大小
 	function handleResize() {
 		if (!canvasRef || !camera || !renderer) return
 
@@ -104,35 +104,35 @@
 		renderer.setSize(width, height)
 	}
 
-	// Animation loop
+	// 動畫循環
 	function animate() {
 		animationFrameId = requestAnimationFrame(animate)
 
-		// Update controls
+		// 更新控制項
 		controls.update()
 
-		// Render the scene
+		// 渲染場景
 		renderer.render(scene, camera)
 	}
 
-	// Effect: Initialize scene when canvas is ready
+	// 效果：當canvas準備好時初始化場景
 	$effect(() => {
 		if (canvasRef) {
 			initScene()
 			animate()
 
-			// Setup ResizeObserver
+			// 設定ResizeObserver
 			resizeObserver = new ResizeObserver(() => {
 				handleResize()
 			})
 			resizeObserver.observe(canvasRef)
 
-			// Load model (initial only)
+			// 載入模型（僅初始）
 			if (!modelStore.model) {
 				modelStore.loadModel(modelUrl)
 			}
 
-			// Cleanup
+			// 清理
 			return () => {
 				resizeObserver?.disconnect()
 				cancelAnimationFrame(animationFrameId)
@@ -142,16 +142,16 @@
 		}
 	})
 
-	// Effect: Add model to scene when loaded
+	// 效果：當模型載入時添加到場景
 	$effect(() => {
 		if (modelStore.model && scene) {
-			// Remove previous model if exists
+			// 如果存在舊模型則移除
 			const existingModel = scene.children.find((child) => child.userData.isModel)
 			if (existingModel) {
 				scene.remove(existingModel)
 			}
 
-			// Add new model
+			// 添加新模型
 			const model = modelStore.model
 			model.userData.isModel = true
 
