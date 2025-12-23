@@ -34,31 +34,31 @@ export async function loadGLBModel(
 	const cacheKey = url.split('/').pop() || url
 
 	try {
-		// Step 1: Check cache first
+		// 步驟1：先檢查快取
 		onProgress?.(0)
 		const cachedData = await getModelFromCache(cacheKey)
 
 		if (cachedData) {
-			// Load from cache
+			// 從快取載入
 			onProgress?.(50)
 			const scene = await parseGLBFromArrayBuffer(cachedData)
 			onProgress?.(100)
 			return { scene, fromCache: true }
 		}
 
-		// Step 2: Download from network
+		// 步驟2：從網路下載
 		const arrayBuffer = await downloadGLB(url, (progress) => {
-			// Map download progress to 0-70%
+			// 將下載進度映射到0-70%
 			onProgress?.(progress * 0.7)
 		})
 
-		// Step 3: Save to cache (async, don't wait)
+		// 步驟3：保存到快取（異步，不等待）
 		onProgress?.(70)
 		saveModelToCache(cacheKey, arrayBuffer).catch((error) => {
 			console.warn('[GLBLoader] Failed to cache model:', error)
 		})
 
-		// Step 4: Parse the model
+		// 步驟4：解析模型
 		onProgress?.(80)
 		const scene = await parseGLBFromArrayBuffer(arrayBuffer)
 		onProgress?.(100)
@@ -142,11 +142,11 @@ async function parseGLBFromArrayBuffer(arrayBuffer: ArrayBuffer): Promise<THREE.
 	return new Promise((resolve, reject) => {
 		const loader = new GLTFLoader()
 
-		// Convert ArrayBuffer to data URL for GLTFLoader
-		// Note: GLTFLoader.parse() expects the data in a specific format
+		// 將ArrayBuffer轉換為GLTFLoader的數據URL
+		// 注意：GLTFLoader.parse()期望數據採用特定格式
 		loader.parse(
 			arrayBuffer,
-			'', // Resource path (empty for GLB)
+			'', // 資源路徑（GLB為空）
 			(gltf) => {
 				resolve(gltf.scene)
 			},

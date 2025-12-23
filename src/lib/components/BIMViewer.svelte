@@ -155,7 +155,7 @@
 			const model = modelStore.model
 			model.userData.isModel = true
 
-			// Ensure all meshes are searchable by name and have original materials stored
+			// 確保所有網格都可以通過名稱搜索，並且存儲了原始材質
 			model.traverse((child) => {
 				if (child instanceof THREE.Mesh) {
 					child.userData.originalMaterial = child.material
@@ -164,14 +164,14 @@
 				}
 			})
 
-			// Center the model
+			// 居中模型
 			const box = new THREE.Box3().setFromObject(model)
 			const center = box.getCenter(new THREE.Vector3())
 			model.position.sub(center)
 
 			scene.add(model)
 
-			// Initial 45-degree isometric view
+			// 初始45度等距視圖
 			resetCameraView()
 
 			console.log('[BIMViewer] Model added to scene')
@@ -189,7 +189,7 @@
 		const maxDim = Math.max(size.x, size.y, size.z)
 		const distance = maxDim * 2.5
 
-		// Position camera at 45/45 degree
+		// 將相機定位在45/45度
 		camera.position.set(distance, distance, distance)
 		controls.target.set(0, 0, 0)
 		camera.lookAt(0, 0, 0)
@@ -227,7 +227,7 @@
 			const targetPos = new THREE.Vector3().copy(center).add(direction.multiplyScalar(distance))
 			const targetLookAt = center.clone()
 
-			// Animate camera movement
+			// 動畫相機移動
 			animateCameraTo(targetPos, targetLookAt)
 		}
 	}
@@ -238,18 +238,18 @@
 	function animateCameraTo(targetPos: THREE.Vector3, targetLookAt: THREE.Vector3) {
 		const startPos = camera.position.clone()
 		const startLookAt = controls.target.clone()
-		const duration = 1200 // 1.2 seconds
+		const duration = 1200 // 1.2秒
 		const startTime = performance.now()
 
 		function animate() {
 			const elapsed = performance.now() - startTime
 			const progress = Math.min(elapsed / duration, 1)
 
-			// Ease in-out cubic
+			// 緩入緩出立方
 			const eased =
 				progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2
 
-			// Interpolate position and look-at target
+			// 插值位置和注視目標
 			camera.position.lerpVectors(startPos, targetPos, eased)
 			controls.target.lerpVectors(startLookAt, targetLookAt, eased)
 			controls.update()
@@ -269,10 +269,10 @@
 		model.traverse((child) => {
 			if (child instanceof THREE.Mesh) {
 				if (child === target || isDescendant(target, child)) {
-					// Highlight
+					// 高亮
 					child.material = child.userData.originalMaterial
 				} else {
-					// X-ray
+					// X射線
 					const xrayMaterial = child.userData.originalMaterial.clone()
 					xrayMaterial.transparent = true
 					xrayMaterial.opacity = 0.1
