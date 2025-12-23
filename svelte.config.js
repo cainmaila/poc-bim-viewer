@@ -23,6 +23,9 @@ const config = {
 			// 開發環境使用根路徑，建構時從環境變數讀取
 			base: process.env.PUBLIC_BASE_PATH || ''
 		}
+	},
+	vitePlugin: {
+		inspector: true
 	}
 }
 

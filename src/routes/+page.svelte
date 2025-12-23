@@ -1,6 +1,7 @@
 <script lang="ts">
 	import BIMViewer from '$lib/components/BIMViewer.svelte'
 	import Sidebar from '$lib/components/Sidebar.svelte'
+	import SettingsMenu from '$lib/components/SettingsMenu.svelte'
 	import LoadingOverlay from '$lib/components/LoadingOverlay.svelte'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { base } from '$app/paths'
@@ -18,13 +19,7 @@
 			if (cachedData) {
 				// 從緩存載入模型
 				await modelStore.loadModelFromCache(activeKey)
-			} else {
-				// 緩存中沒有數據，載入預設模型
-				await modelStore.loadModel(defaultModelUrl)
 			}
-		} else {
-			// 沒有active key，載入預設模型
-			await modelStore.loadModel(defaultModelUrl)
 		}
 	})
 
@@ -77,11 +72,26 @@
 >
 	<div class="viewer-wrapper">
 		<BIMViewer bind:this={viewerRef} autoRotate={false} />
+		{#if !modelStore.model && !modelStore.isLoading}
+			<div class="empty-state-hint">
+				<div class="hint-content">
+					<span class="hint-icon">📦</span>
+					<h3>尚未載入模型</h3>
+					<p>請將 .glb 檔案拖曳至此處開始</p>
+				</div>
+			</div>
+		{/if}
 	</div>
 
 	<div class="sidebar-wrapper">
 		<Sidebar treeData={modelStore.treeData} onSelect={handleSelect} />
 	</div>
+
+	<SettingsMenu
+		onGridToggle={(visible) => {
+			viewerRef?.setGridVisible(visible)
+		}}
+	/>
 
 	{#if isDragOver}
 		<div class="drag-overlay">
@@ -212,5 +222,47 @@
 		font-weight: 600;
 		color: #3b82f6;
 		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	.empty-state-hint {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		pointer-events: none;
+		z-index: 50;
+	}
+
+	.hint-content {
+		text-align: center;
+		padding: 3rem;
+		background: rgba(255, 255, 255, 0.7);
+		backdrop-filter: blur(8px);
+		border-radius: 24px;
+		border: 1px solid rgba(255, 255, 255, 0.3);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+		max-width: 400px;
+	}
+
+	.hint-icon {
+		font-size: 4rem;
+		display: block;
+		margin-bottom: 1.5rem;
+		opacity: 0.8;
+	}
+
+	.hint-content h3 {
+		font-size: 1.5rem;
+		margin: 0 0 0.75rem 0;
+		color: #1f2937;
+		font-weight: 600;
+	}
+
+	.hint-content p {
+		font-size: 1rem;
+		color: #6b7280;
+		margin: 0;
+		line-height: 1.5;
 	}
 </style>

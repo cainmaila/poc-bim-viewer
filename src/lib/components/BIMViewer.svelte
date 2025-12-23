@@ -16,6 +16,7 @@
 	let controls: OrbitControls
 	let animationFrameId: number
 	let resizeObserver: ResizeObserver
+	let gridHelper: THREE.GridHelper
 
 	// 初始化Three.js場景
 	function initScene() {
@@ -58,8 +59,9 @@
 		// 添加燈光
 		setupLights()
 
-		// 添加網格助手
-		const gridHelper = new THREE.GridHelper(100, 100, 0xcccccc, 0xe0e0e0)
+		// 添加網格助手（預設隱藏，避免響應式追蹤）
+		gridHelper = new THREE.GridHelper(100, 100, 0xcccccc, 0xe0e0e0)
+		gridHelper.visible = false // 預設隱藏，由 setGridVisible 控制
 		scene.add(gridHelper)
 
 		// 添加軸助手（可選，用於調試）
@@ -136,40 +138,49 @@
 		}
 	})
 
+	// 追蹤已渲染的模型，避免重複渲染
+	let renderedModel: THREE.Group | null = null
+
 	// 效果：當模型載入時添加到場景
 	$effect(() => {
-		if (modelStore.model && scene) {
-			// 如果存在舊模型則移除
-			const existingModel = scene.children.find((child) => child.userData.isModel)
-			if (existingModel) {
-				scene.remove(existingModel)
-			}
+		const currentModel = modelStore.model
+		if (!currentModel || !scene) return
 
-			// 添加新模型
-			const model = modelStore.model
-			model.userData.isModel = true
+		// 如果是同一個模型，不重複渲染
+		if (currentModel === renderedModel) return
 
-			// 確保所有網格都可以通過名稱搜索，並且存儲了原始材質
-			model.traverse((child) => {
-				if (child instanceof THREE.Mesh) {
-					child.userData.originalMaterial = child.material
-					child.userData.originalOpacity = child.material.opacity
-					child.userData.originalTransparent = child.material.transparent
-				}
-			})
-
-			// 居中模型
-			const box = new THREE.Box3().setFromObject(model)
-			const center = box.getCenter(new THREE.Vector3())
-			model.position.sub(center)
-
-			scene.add(model)
-
-			// 初始45度等距視圖
-			resetCameraView()
-
-			console.log('[BIMViewer] Model added to scene')
+		// 如果存在舊模型則移除
+		const existingModel = scene.children.find((child) => child.userData.isModel)
+		if (existingModel) {
+			scene.remove(existingModel)
 		}
+
+		// 添加新模型
+		currentModel.userData.isModel = true
+
+		// 確保所有網格都可以通過名稱搜索，並且存儲了原始材質
+		currentModel.traverse((child) => {
+			if (child instanceof THREE.Mesh) {
+				child.userData.originalMaterial = child.material
+				child.userData.originalOpacity = child.material.opacity
+				child.userData.originalTransparent = child.material.transparent
+			}
+		})
+
+		// 居中模型
+		const box = new THREE.Box3().setFromObject(currentModel)
+		const center = box.getCenter(new THREE.Vector3())
+		currentModel.position.sub(center)
+
+		scene.add(currentModel)
+
+		// 記錄已渲染的模型
+		renderedModel = currentModel
+
+		// 初始45度等距視圖
+		resetCameraView()
+
+		console.log('[BIMViewer] Model added to scene')
 	})
 
 	function resetCameraView() {
@@ -285,6 +296,12 @@
 				child.material = child.userData.originalMaterial
 			}
 		})
+	}
+
+	export function setGridVisible(visible: boolean) {
+		if (gridHelper) {
+			gridHelper.visible = visible
+		}
 	}
 
 	function isDescendant(parent: THREE.Object3D, child: THREE.Object3D): boolean {
