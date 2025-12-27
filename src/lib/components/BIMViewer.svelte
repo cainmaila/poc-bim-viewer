@@ -3,6 +3,8 @@
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { calculateOptimalDistance, selectViewDirection } from '$lib/utils/cameraUtils'
+	import { PostProcessingManager } from '$lib/utils/postProcessingManager'
+	import { settingsStore } from '$lib/stores/settings.svelte'
 
 	interface Props {
 		autoRotate?: boolean
@@ -20,6 +22,7 @@
 	let animationFrameId: number
 	let resizeObserver: ResizeObserver
 	let gridHelper: THREE.GridHelper
+	let postProcessingManager: PostProcessingManager | null = null
 
 	// 邊界盒狀態
 	let currentSelectedObject: THREE.Object3D | null = null
@@ -75,6 +78,10 @@
 		// 添加軸助手（可選，用於調試）
 		// const axesHelper = new THREE.AxesHelper(10)
 		// scene.add(axesHelper)
+
+		// 初始化後期處理管理器（從 settingsStore 讀取配置）
+		const config = settingsStore.postProcessing
+		postProcessingManager = new PostProcessingManager(scene, camera, renderer, config)
 	}
 
 	// 設定燈光（暗色主題 + 暖色照明）
@@ -116,6 +123,11 @@
 		camera.updateProjectionMatrix()
 
 		renderer.setSize(width, height)
+
+		// 同步更新後期處理解析度
+		if (postProcessingManager) {
+			postProcessingManager.handleResize(width, height)
+		}
 	}
 
 	// 動畫循環
@@ -125,8 +137,12 @@
 		// 更新控制項
 		controls.update()
 
-		// 渲染場景
-		renderer.render(scene, camera)
+		// 渲染場景（使用後期處理或直接渲染）
+		if (postProcessingManager) {
+			postProcessingManager.render()
+		} else {
+			renderer.render(scene, camera)
+		}
 	}
 
 	// 效果：當canvas準備好時初始化場景
@@ -153,6 +169,12 @@
 					scene.remove(boundingBoxHelper)
 					boundingBoxHelper.dispose()
 					boundingBoxHelper = null
+				}
+
+				// 清理後期處理管理器
+				if (postProcessingManager) {
+					postProcessingManager.dispose()
+					postProcessingManager = null
 				}
 			}
 		}
@@ -211,6 +233,8 @@
 		console.log('[BIMViewer] Model added to scene')
 	})
 
+	// 移除：不再需要監聽設置變化（切換效果會自動重新整理頁面）
+
 	function resetCameraView() {
 		if (!scene || !camera || !controls) return
 
@@ -254,6 +278,11 @@
 
 			applyXray(target)
 			updateBoundingBox()
+
+			// 更新 Outline 目標
+			if (postProcessingManager) {
+				postProcessingManager.setOutlineObjects([target])
+			}
 
 			const box = new THREE.Box3().setFromObject(target)
 			const center = box.getCenter(new THREE.Vector3())
@@ -341,6 +370,11 @@
 		// 清除選擇和邊界盒
 		currentSelectedObject = null
 		updateBoundingBox()
+
+		// 清除 Outline 目標
+		if (postProcessingManager) {
+			postProcessingManager.clearOutlineObjects()
+		}
 	}
 
 	export function setGridVisible(visible: boolean) {
