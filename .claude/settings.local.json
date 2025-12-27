@@ -30,7 +30,9 @@
       "Bash(pnpm exec tailwindcss:*)",
       "Bash(npx shadcn-svelte@latest add progress:*)",
       "Bash(npx shadcn-svelte@latest add:*)",
-      "mcp__serena__find_symbol"
+      "mcp__serena__find_symbol",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ]
   }
 }
