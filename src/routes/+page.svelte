@@ -91,6 +91,9 @@
 		onGridToggle={(visible) => {
 			viewerRef?.setGridVisible(visible)
 		}}
+		onBoundingBoxToggle={(visible) => {
+			viewerRef?.setBoundingBoxVisible(visible)
+		}}
 	/>
 
 	{#if isDragOver}

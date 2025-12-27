@@ -18,6 +18,11 @@
 	let resizeObserver: ResizeObserver
 	let gridHelper: THREE.GridHelper
 
+	// 邊界盒狀態
+	let currentSelectedObject: THREE.Object3D | null = null
+	let boundingBoxHelper: THREE.BoxHelper | null = null
+	let boundingBoxEnabled = $state(false)
+
 	// 初始化Three.js場景
 	function initScene() {
 		if (!canvasRef) return
@@ -134,6 +139,13 @@
 				cancelAnimationFrame(animationFrameId)
 				controls?.dispose()
 				renderer?.dispose()
+
+				// 清理邊界盒輔助工具
+				if (boundingBoxHelper) {
+					scene.remove(boundingBoxHelper)
+					boundingBoxHelper.dispose()
+					boundingBoxHelper = null
+				}
 			}
 		}
 	})
@@ -153,6 +165,14 @@
 		const existingModel = scene.children.find((child) => child.userData.isModel)
 		if (existingModel) {
 			scene.remove(existingModel)
+
+			// 當模型改變時清除選擇和邊界盒
+			currentSelectedObject = null
+			if (boundingBoxHelper) {
+				scene.remove(boundingBoxHelper)
+				boundingBoxHelper.dispose()
+				boundingBoxHelper = null
+			}
 		}
 
 		// 添加新模型
@@ -218,7 +238,11 @@
 		})
 
 		if (target) {
+			// 追蹤當前選中的物件
+			currentSelectedObject = target
+
 			applyXray(target)
+			updateBoundingBox()
 
 			const box = new THREE.Box3().setFromObject(target)
 			const center = box.getCenter(new THREE.Vector3())
@@ -296,11 +320,49 @@
 				child.material = child.userData.originalMaterial
 			}
 		})
+
+		// 清除選擇和邊界盒
+		currentSelectedObject = null
+		updateBoundingBox()
 	}
 
 	export function setGridVisible(visible: boolean) {
 		if (gridHelper) {
 			gridHelper.visible = visible
+		}
+	}
+
+	/**
+	 * 切換邊界盒可見性
+	 */
+	export function setBoundingBoxVisible(visible: boolean) {
+		boundingBoxEnabled = visible
+		updateBoundingBox()
+	}
+
+	/**
+	 * 根據當前狀態更新或隱藏邊界盒
+	 * 重用同一個 BoxHelper 實例以提高效率
+	 */
+	function updateBoundingBox() {
+		if (!scene) return
+
+		// 如果邊界盒已啟用且有物件被選中
+		if (boundingBoxEnabled && currentSelectedObject) {
+			if (boundingBoxHelper) {
+				// 更新現有的 helper 指向新物件
+				boundingBoxHelper.setFromObject(currentSelectedObject)
+			} else {
+				// 創建新的 BoxHelper（綠色）
+				boundingBoxHelper = new THREE.BoxHelper(currentSelectedObject, 0x00ff00)
+				scene.add(boundingBoxHelper)
+			}
+			boundingBoxHelper.visible = true
+		} else {
+			// 如果存在邊界盒則隱藏它
+			if (boundingBoxHelper) {
+				boundingBoxHelper.visible = false
+			}
 		}
 	}
 

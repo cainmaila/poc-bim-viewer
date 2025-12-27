@@ -3,9 +3,10 @@
 
 	interface Props {
 		onGridToggle?: (visible: boolean) => void
+		onBoundingBoxToggle?: (visible: boolean) => void
 	}
 
-	let { onGridToggle }: Props = $props()
+	let { onGridToggle, onBoundingBoxToggle }: Props = $props()
 
 	let isOpen = $state(false)
 
@@ -50,7 +51,20 @@
 					<span class="slider round"></span>
 				</label>
 			</div>
-			<!-- Future settings can differ here -->
+			<div class="setting-item">
+				<span class="setting-label">顯示選取物件的Bounding Box</span>
+				<label class="switch">
+					<input
+						type="checkbox"
+						checked={settingsStore.boundingBoxVisible}
+						onchange={() => {
+							settingsStore.toggleBoundingBox()
+							onBoundingBoxToggle?.(settingsStore.boundingBoxVisible)
+						}}
+					/>
+					<span class="slider round"></span>
+				</label>
+			</div>
 		</div>
 	{/if}
 </div>
