@@ -32,8 +32,8 @@
 
 		// 創建場景
 		scene = new THREE.Scene()
-		scene.background = new THREE.Color(0xf0f0f0)
-		scene.fog = new THREE.Fog(0xf0f0f0, 100, 500)
+		scene.background = new THREE.Color(0x1a1a1a) // 深灰背景
+		scene.fog = new THREE.Fog(0x1a1a1a, 150, 600) // 增加霧效距離
 
 		// 創建相機（透視，但我們將定位為等距感覺）
 		camera = new THREE.PerspectiveCamera(
@@ -68,7 +68,7 @@
 		setupLights()
 
 		// 添加網格助手（預設隱藏，避免響應式追蹤）
-		gridHelper = new THREE.GridHelper(100, 100, 0xcccccc, 0xe0e0e0)
+		gridHelper = new THREE.GridHelper(100, 100, 0x3f3f46, 0x2a2a2e) // 暗色網格
 		gridHelper.visible = false // 預設隱藏，由 setGridVisible 控制
 		scene.add(gridHelper)
 
@@ -77,14 +77,14 @@
 		// scene.add(axesHelper)
 	}
 
-	// 設定燈光
+	// 設定燈光（暗色主題 + 暖色照明）
 	function setupLights() {
-		// 環境光用於基礎照明
-		const ambientLight = new THREE.AmbientLight(0xffffff, 0.6)
+		// 環境光 - 降低強度，使用微暖色調
+		const ambientLight = new THREE.AmbientLight(0xffe8d6, 0.35)
 		scene.add(ambientLight)
 
-		// 主要方向光（類似太陽）
-		const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8)
+		// 主要方向光 - 暖白色，增強對比
+		const directionalLight = new THREE.DirectionalLight(0xfff5e6, 1.2)
 		directionalLight.position.set(50, 50, 50)
 		directionalLight.castShadow = true
 		directionalLight.shadow.camera.left = -50
@@ -95,9 +95,14 @@
 		directionalLight.shadow.mapSize.height = 2048
 		scene.add(directionalLight)
 
-		// 半球光用於柔和環境照明
-		const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0x444444, 0.4)
+		// 半球光 - 暖色天空 + 冷色地面（互補對比）
+		const hemisphereLight = new THREE.HemisphereLight(0xffd699, 0x2a3f5f, 0.5)
 		scene.add(hemisphereLight)
+
+		// 填充光 - 減少陰影過暗
+		const fillLight = new THREE.DirectionalLight(0x6699ff, 0.3)
+		fillLight.position.set(-30, 20, -30)
+		scene.add(fillLight)
 	}
 
 	// 處理視窗調整大小
