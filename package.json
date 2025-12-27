@@ -1,7 +1,7 @@
 {
 	"name": "poc-bim-viewer",
 	"private": true,
-	"version": "1.0.18",
+	"version": "1.0.19",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -56,6 +56,7 @@
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"idb": "^8.0.3",
+		"lucide-svelte": "^0.562.0",
 		"tailwind-merge": "^3.4.0",
 		"three": "^0.182.0"
 	}

@@ -8,6 +8,7 @@
 	import { base } from '$app/paths'
 	import { onMount } from 'svelte'
 	import { getActiveModelKey, getModelFromCache } from '$lib/utils/indexedDBCache'
+	import { Box, AlertTriangle } from 'lucide-svelte'
 
 	const defaultModelUrl = `${base}/building.glb`
 	let isDragOver = $state(false)
@@ -64,7 +65,7 @@
 </script>
 
 <div
-	class="fixed inset-0 overflow-hidden bg-gray-100"
+	class="fixed inset-0 overflow-hidden bg-background"
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
 	ondrop={handleDrop}
@@ -76,11 +77,11 @@
 		{#if !modelStore.model && !modelStore.isLoading}
 			<div class="pointer-events-none absolute inset-0 z-50 flex items-center justify-center">
 				<div
-					class="max-w-md rounded-3xl border border-white/30 bg-white/70 p-12 text-center shadow-xl backdrop-blur-lg"
+					class="max-w-md rounded-3xl border border-border/30 bg-card/70 p-12 text-center shadow-xl backdrop-blur-lg"
 				>
-					<span class="mb-6 block text-6xl opacity-80">📦</span>
-					<h3 class="mb-3 text-2xl font-semibold text-gray-800">尚未載入模型</h3>
-					<p class="m-0 leading-relaxed text-gray-600">請將 .glb 檔案拖曳至此處開始</p>
+					<Box size={64} class="mb-6 text-muted-foreground opacity-80" />
+					<h3 class="mb-3 text-2xl font-semibold text-foreground">尚未載入模型</h3>
+					<p class="m-0 leading-relaxed text-muted-foreground">請將 .glb 檔案拖曳至此處開始</p>
 				</div>
 			</div>
 		{/if}
@@ -122,12 +123,12 @@
 			variant="destructive"
 			class="absolute left-1/2 top-8 z-[10000] flex max-w-md -translate-x-1/2 flex-col items-center gap-4 shadow-xl"
 		>
-			<div class="text-4xl">⚠️</div>
+			<AlertTriangle size={32} />
 			<Alert.Description class="text-center text-base leading-relaxed">
 				{modelStore.error}
 			</Alert.Description>
 			<button
-				class="rounded bg-white px-6 py-2 font-semibold text-destructive transition-all hover:-translate-y-px hover:bg-gray-100 active:translate-y-0"
+				class="rounded bg-card px-6 py-2 font-semibold text-destructive transition-all hover:-translate-y-px hover:bg-card/80 active:translate-y-0"
 				onclick={() => modelStore.loadModel(defaultModelUrl)}
 			>
 				重試

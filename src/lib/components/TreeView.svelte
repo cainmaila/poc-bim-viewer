@@ -3,6 +3,7 @@
 	import type { TreeItem } from '$lib/stores/modelCache.svelte'
 	import * as Collapsible from '$lib/components/ui/collapsible'
 	import TreeView from './TreeView.svelte' // Self-import instead of deprecated svelte:self
+	import { FolderOpen, Box, Circle, ChevronRight } from 'lucide-svelte'
 
 	interface Props {
 		items: TreeItem[]
@@ -28,7 +29,7 @@
 		<li class="flex flex-col">
 			<Collapsible.Root open={expandedIds.has(item.id)}>
 				<div
-					class="flex cursor-pointer items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap rounded px-2 py-1 text-[13px] text-gray-700 hover:bg-gray-100"
+					class="flex cursor-pointer items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap rounded px-2 py-1 text-[13px] text-foreground hover:bg-accent/20"
 					onclick={() => onSelect(item.id)}
 					role="button"
 					tabindex="0"
@@ -36,23 +37,23 @@
 				>
 					{#if item.children.length > 0}
 						<button
-							class="flex w-3 items-center justify-center border-none bg-transparent p-0 text-[8px] text-gray-400 transition-transform duration-200"
+							class="flex w-3 shrink-0 items-center justify-center border-none bg-transparent p-0 text-muted-foreground transition-transform duration-200"
 							class:rotate-90={expandedIds.has(item.id)}
 							onclick={(e) => toggleExpand(item.id, e)}
 						>
-							▶
+							<ChevronRight size={12} />
 						</button>
 					{:else}
-						<span class="w-3"></span>
+						<span class="w-3 shrink-0"></span>
 					{/if}
 
-					<span class="text-sm">
+					<span class="shrink-0">
 						{#if item.type === 'Group'}
-							📁
+							<FolderOpen size={16} class="text-accent" />
 						{:else if item.type === 'Mesh'}
-							📦
+							<Box size={16} class="text-primary" />
 						{:else}
-							🔹
+							<Circle size={14} class="text-muted-foreground" />
 						{/if}
 					</span>
 

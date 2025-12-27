@@ -20,6 +20,9 @@ importers:
       idb:
         specifier: ^8.0.3
         version: 8.0.3
+      lucide-svelte:
+        specifier: ^0.562.0
+        version: 0.562.0(svelte@5.46.0)
       tailwind-merge:
         specifier: ^3.4.0
         version: 3.4.0
@@ -1389,6 +1392,11 @@ packages:
 
   lodash.merge@4.6.2:
     resolution: {integrity: sha512-0KpjqXRVvrYyCsX1swR/XTK0va6VQkQM6MNo7PqW77ByjAhoARA8EfrP1N4+KlKj8YS0ZUCtRT/YUuhyYDujIQ==}
+
+  lucide-svelte@0.562.0:
+    resolution: {integrity: sha512-kSJDH/55lf0mun/o4nqWBXOcq0fWYzPeIjbTD97ywoeumAB9kWxtM06gC7oynqjtK3XhAljWSz5RafIzPEYIQA==}
+    peerDependencies:
+      svelte: ^3 || ^4 || ^5.0.0-next.42
 
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
@@ -3186,6 +3194,10 @@ snapshots:
       p-locate: 5.0.0
 
   lodash.merge@4.6.2: {}
+
+  lucide-svelte@0.562.0(svelte@5.46.0):
+    dependencies:
+      svelte: 5.46.0
 
   lz-string@1.5.0: {}
 

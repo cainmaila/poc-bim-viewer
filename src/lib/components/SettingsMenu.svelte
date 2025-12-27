@@ -4,6 +4,7 @@
 	import * as Popover from '$lib/components/ui/popover'
 	import { Switch } from '$lib/components/ui/switch'
 	import { Separator } from '$lib/components/ui/separator'
+	import { Settings } from 'lucide-svelte'
 
 	interface Props {
 		onGridToggle?: (visible: boolean) => void
@@ -21,7 +22,7 @@
 				size="icon"
 				class="h-10 w-10 rounded-full bg-white/90 shadow-md transition-transform hover:scale-105"
 			>
-				<span class="text-xl">⚙️</span>
+				<Settings size={20} />
 				<span class="sr-only">系統設定</span>
 			</Button>
 		</Popover.Trigger>
