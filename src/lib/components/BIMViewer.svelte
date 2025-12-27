@@ -388,13 +388,15 @@
 	}
 </script>
 
-<canvas bind:this={canvasRef} class="viewer-canvas"></canvas>
+<canvas
+	bind:this={canvasRef}
+	class="block h-full w-full touch-none"
+	aria-label="3D BIM Model Viewer"
+></canvas>
 
 <style lang="postcss">
-	.viewer-canvas {
-		width: 100%;
-		height: 100%;
-		display: block;
+	/* 保留 Three.js 必要樣式 */
+	canvas {
 		outline: none;
 	}
 </style>

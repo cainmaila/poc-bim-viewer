@@ -3,6 +3,7 @@
 	import Sidebar from '$lib/components/Sidebar.svelte'
 	import SettingsMenu from '$lib/components/SettingsMenu.svelte'
 	import LoadingOverlay from '$lib/components/LoadingOverlay.svelte'
+	import * as Alert from '$lib/components/ui/alert'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { base } from '$app/paths'
 	import { onMount } from 'svelte'
@@ -63,27 +64,29 @@
 </script>
 
 <div
-	class="viewer-container"
+	class="fixed inset-0 overflow-hidden bg-gray-100"
 	ondragover={handleDragOver}
 	ondragleave={handleDragLeave}
 	ondrop={handleDrop}
 	role="region"
 	aria-label="BIM Viewer"
 >
-	<div class="viewer-wrapper">
+	<div class="absolute inset-0 z-0">
 		<BIMViewer bind:this={viewerRef} autoRotate={false} />
 		{#if !modelStore.model && !modelStore.isLoading}
-			<div class="empty-state-hint">
-				<div class="hint-content">
-					<span class="hint-icon">📦</span>
-					<h3>尚未載入模型</h3>
-					<p>請將 .glb 檔案拖曳至此處開始</p>
+			<div class="pointer-events-none absolute inset-0 z-50 flex items-center justify-center">
+				<div
+					class="max-w-md rounded-3xl border border-white/30 bg-white/70 p-12 text-center shadow-xl backdrop-blur-lg"
+				>
+					<span class="mb-6 block text-6xl opacity-80">📦</span>
+					<h3 class="mb-3 text-2xl font-semibold text-gray-800">尚未載入模型</h3>
+					<p class="m-0 leading-relaxed text-gray-600">請將 .glb 檔案拖曳至此處開始</p>
 				</div>
 			</div>
 		{/if}
 	</div>
 
-	<div class="sidebar-wrapper">
+	<div class="pointer-events-none absolute top-0 bottom-0 left-0 z-10 flex">
 		<Sidebar treeData={modelStore.treeData} onSelect={handleSelect} />
 	</div>
 
@@ -97,8 +100,12 @@
 	/>
 
 	{#if isDragOver}
-		<div class="drag-overlay">
-			<div class="drag-message">請在此處放開以載入模型</div>
+		<div
+			class="border-primary bg-primary/40 pointer-events-none absolute inset-0 z-[9000] flex items-center justify-center border-4 border-dashed backdrop-blur-sm"
+		>
+			<div class="text-primary rounded-full bg-white px-8 py-4 font-semibold shadow-lg">
+				請在此處放開以載入模型
+			</div>
 		</div>
 	{/if}
 
@@ -111,161 +118,28 @@
 	{/if}
 
 	{#if modelStore.error}
-		<div class="error-message">
-			<div class="error-icon">⚠️</div>
-			<div class="error-text">{modelStore.error}</div>
-			<button class="retry-button" onclick={() => modelStore.loadModel(defaultModelUrl)}>
+		<Alert.Root
+			variant="destructive"
+			class="absolute top-8 left-1/2 z-[10000] flex max-w-md -translate-x-1/2 flex-col items-center gap-4 shadow-xl"
+		>
+			<div class="text-4xl">⚠️</div>
+			<Alert.Description class="text-center text-base leading-relaxed">
+				{modelStore.error}
+			</Alert.Description>
+			<button
+				class="text-destructive rounded bg-white px-6 py-2 font-semibold transition-all hover:-translate-y-px hover:bg-gray-100 active:translate-y-0"
+				onclick={() => modelStore.loadModel(defaultModelUrl)}
+			>
 				重試
 			</button>
-		</div>
+		</Alert.Root>
 	{/if}
 </div>
 
 <style lang="postcss">
-	:global(body) {
-		margin: 0;
-		padding: 0;
-		overflow: hidden;
-	}
-
-	.viewer-container {
-		position: fixed;
-		inset: 0;
-		overflow: hidden;
-		background: #f0f0f0;
-	}
-
-	.viewer-wrapper {
-		position: absolute;
-		inset: 0;
-		z-index: 0;
-	}
-
-	.sidebar-wrapper {
-		position: absolute;
-		top: 0;
-		left: 0;
-		bottom: 0;
-		z-index: 10;
-		pointer-events: none; /* 讓事件穿過包裝器 */
-		display: flex; /* 允許子元素自行調整大小 */
-	}
-
-	/* 我們需要確保Sidebar本身捕獲指針事件 */
-	:global(.sidebar) {
+	/* 確保Sidebar捕獲指針事件 */
+	:global(aside) {
 		pointer-events: auto;
-		box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1); /* 添加陰影以增加深度 */
-	}
-
-	.error-message {
-		position: absolute;
-		top: 2rem;
-		left: 50%;
-		transform: translateX(-50%);
-		background: rgba(220, 38, 38, 0.95);
-		color: white;
-		padding: 1.5rem 2rem;
-		border-radius: 8px;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: 1rem;
-		max-width: 400px;
-		z-index: 10000;
-	}
-
-	.error-icon {
-		font-size: 2rem;
-	}
-
-	.error-text {
-		text-align: center;
-		font-size: 1rem;
-		line-height: 1.5;
-	}
-
-	.retry-button {
-		padding: 0.5rem 1.5rem;
-		background: white;
-		color: #dc2626;
-		border: none;
-		border-radius: 4px;
-		font-weight: 600;
-		cursor: pointer;
-		transition: all 0.2s;
-
-		&:hover {
-			background: #f3f4f6;
-			transform: translateY(-1px);
-		}
-
-		&:active {
-			transform: translateY(0);
-		}
-	}
-
-	.drag-overlay {
-		position: absolute;
-		inset: 0;
-		background: rgba(59, 130, 246, 0.4);
-		backdrop-filter: blur(4px);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		z-index: 9000;
-		border: 4px dashed #3b82f6;
-		pointer-events: none;
-	}
-
-	.drag-message {
-		background: white;
-		padding: 1rem 2rem;
-		border-radius: 99px;
-		font-weight: 600;
-		color: #3b82f6;
-		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-	}
-
-	.empty-state-hint {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		pointer-events: none;
-		z-index: 50;
-	}
-
-	.hint-content {
-		text-align: center;
-		padding: 3rem;
-		background: rgba(255, 255, 255, 0.7);
-		backdrop-filter: blur(8px);
-		border-radius: 24px;
-		border: 1px solid rgba(255, 255, 255, 0.3);
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-		max-width: 400px;
-	}
-
-	.hint-icon {
-		font-size: 4rem;
-		display: block;
-		margin-bottom: 1.5rem;
-		opacity: 0.8;
-	}
-
-	.hint-content h3 {
-		font-size: 1.5rem;
-		margin: 0 0 0.75rem 0;
-		color: #1f2937;
-		font-weight: 600;
-	}
-
-	.hint-content p {
-		font-size: 1rem;
-		color: #6b7280;
-		margin: 0;
-		line-height: 1.5;
+		box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
 	}
 </style>

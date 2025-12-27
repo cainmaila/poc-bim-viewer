@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity'
 	import type { TreeItem } from '$lib/stores/modelCache.svelte'
+	import * as Collapsible from '$lib/components/ui/collapsible'
+	import TreeView from './TreeView.svelte' // Self-import instead of deprecated svelte:self
 
 	interface Props {
 		items: TreeItem[]
@@ -9,7 +11,6 @@
 	}
 
 	let { items, onSelect, level = 0 }: Props = $props()
-
 	let expandedIds = new SvelteSet<string>()
 
 	function toggleExpand(id: string, e: MouseEvent) {
@@ -22,108 +23,48 @@
 	}
 </script>
 
-<ul class="tree-list" style:--level={level}>
+<ul class="m-0 list-none p-0 ps-4">
 	{#each items as item (item.id)}
-		<li class="tree-item">
-			<div
-				class="item-header"
-				onclick={() => onSelect(item.id)}
-				role="button"
-				tabindex="0"
-				onkeydown={(e) => e.key === 'Enter' && onSelect(item.id)}
-			>
-				{#if item.children.length > 0}
-					<button
-						class="expand-toggle"
-						class:expanded={expandedIds.has(item.id)}
-						onclick={(e) => toggleExpand(item.id, e)}
-					>
-						▶
-					</button>
-				{:else}
-					<span class="spacer"></span>
-				{/if}
-
-				<span class="item-icon">
-					{#if item.type === 'Group'}
-						📁
-					{:else if item.type === 'Mesh'}
-						📦
+		<li class="flex flex-col">
+			<Collapsible.Root open={expandedIds.has(item.id)}>
+				<div
+					class="flex cursor-pointer items-center gap-1.5 overflow-hidden rounded px-2 py-1 text-[13px] text-ellipsis whitespace-nowrap text-gray-700 hover:bg-gray-100"
+					onclick={() => onSelect(item.id)}
+					role="button"
+					tabindex="0"
+					onkeydown={(e) => e.key === 'Enter' && onSelect(item.id)}
+				>
+					{#if item.children.length > 0}
+						<button
+							class="flex w-3 items-center justify-center border-none bg-transparent p-0 text-[8px] text-gray-400 transition-transform duration-200"
+							class:rotate-90={expandedIds.has(item.id)}
+							onclick={(e) => toggleExpand(item.id, e)}
+						>
+							▶
+						</button>
 					{:else}
-						🔹
+						<span class="w-3"></span>
 					{/if}
-				</span>
 
-				<span class="item-name">{item.name}</span>
-			</div>
+					<span class="text-sm">
+						{#if item.type === 'Group'}
+							📁
+						{:else if item.type === 'Mesh'}
+							📦
+						{:else}
+							🔹
+						{/if}
+					</span>
 
-			{#if item.children.length > 0 && expandedIds.has(item.id)}
-				<svelte:self items={item.children} {onSelect} level={level + 1} />
-			{/if}
+					<span class="flex-1 overflow-hidden text-ellipsis">{item.name}</span>
+				</div>
+
+				{#if item.children.length > 0}
+					<Collapsible.Content>
+						<TreeView items={item.children} {onSelect} level={level + 1} />
+					</Collapsible.Content>
+				{/if}
+			</Collapsible.Root>
 		</li>
 	{/each}
 </ul>
-
-<style lang="postcss">
-	.tree-list {
-		list-style: none;
-		padding: 0;
-		margin: 0;
-		padding-inline-start: 1rem;
-	}
-
-	.tree-item {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.item-header {
-		display: flex;
-		align-items: center;
-		padding: 4px 8px;
-		cursor: pointer;
-		border-radius: 4px;
-		gap: 6px;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		font-size: 13px;
-		color: #374151;
-
-		&:hover {
-			background: #f3f4f6;
-		}
-	}
-
-	.expand-toggle {
-		background: none;
-		border: none;
-		padding: 0;
-		font-size: 8px;
-		cursor: pointer;
-		color: #9ca3af;
-		transition: transform 0.2s;
-		width: 12px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-
-		&.expanded {
-			transform: rotate(90deg);
-		}
-	}
-
-	.spacer {
-		width: 12px;
-	}
-
-	.item-icon {
-		font-size: 14px;
-	}
-
-	.item-name {
-		flex: 1;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-</style>
