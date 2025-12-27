@@ -2,12 +2,15 @@
 	import * as THREE from 'three'
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
+	import { calculateOptimalDistance, selectViewDirection } from '$lib/utils/cameraUtils'
 
 	interface Props {
 		autoRotate?: boolean
 	}
 
 	let { autoRotate = false }: Props = $props()
+
+	const CAMERA_PADDING = 0.15 // 15% 邊距
 
 	let canvasRef = $state<HTMLCanvasElement | null>(null)
 	let scene: THREE.Scene
@@ -210,12 +213,15 @@
 		if (!model) return
 
 		const box = new THREE.Box3().setFromObject(model)
-		const size = box.getSize(new THREE.Vector3())
-		const maxDim = Math.max(size.x, size.y, size.z)
-		const distance = maxDim * 2.5
+
+		// 使用等距視角
+		const isometricDirection = new THREE.Vector3(1, 1, 1).normalize()
+
+		// 計算最佳距離
+		const distance = calculateOptimalDistance(box, camera, isometricDirection, CAMERA_PADDING)
 
 		// 將相機定位在45/45度
-		camera.position.set(distance, distance, distance)
+		camera.position.copy(isometricDirection.multiplyScalar(distance))
 		controls.target.set(0, 0, 0)
 		camera.lookAt(0, 0, 0)
 		controls.update()
@@ -246,18 +252,24 @@
 
 			const box = new THREE.Box3().setFromObject(target)
 			const center = box.getCenter(new THREE.Vector3())
-			const size = box.getSize(new THREE.Vector3())
 
-			const maxDim = Math.max(size.x, size.y, size.z)
-			const distance = Math.max(maxDim * 3, 5)
+			// 獲取當前視角方向
+			const currentDirection = new THREE.Vector3()
+				.copy(camera.position)
+				.sub(controls.target)
+				.normalize()
 
-			const direction = new THREE.Vector3().copy(camera.position).sub(controls.target).normalize()
+			// 選擇最佳視角（處理邊緣案例）
+			const viewDirection = selectViewDirection(currentDirection, box)
 
-			const targetPos = new THREE.Vector3().copy(center).add(direction.multiplyScalar(distance))
-			const targetLookAt = center.clone()
+			// 使用改進的演算法計算最佳距離
+			const distance = calculateOptimalDistance(box, camera, viewDirection, CAMERA_PADDING)
+
+			// 計算目標相機位置
+			const targetPos = center.clone().add(viewDirection.clone().multiplyScalar(distance))
 
 			// 動畫相機移動
-			animateCameraTo(targetPos, targetLookAt)
+			animateCameraTo(targetPos, center)
 		}
 	}
 

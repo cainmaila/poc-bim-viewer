@@ -18,7 +18,10 @@
       "Bash(pnpm run build:*)",
       "mcp__serena__check_onboarding_performed",
       "Bash(pnpm format:*)",
-      "Bash(pnpm check:*)"
+      "Bash(pnpm check:*)",
+      "mcp__filesystem__read_text_file",
+      "mcp__filesystem__write_file",
+      "Bash(pnpm test:unit:*)"
     ]
   }
 }
