@@ -13,7 +13,7 @@
 	let { onGridToggle, onBoundingBoxToggle }: Props = $props()
 </script>
 
-<div class="absolute top-4 right-4 z-[100]">
+<div class="absolute right-4 top-4 z-[100]">
 	<Popover.Root>
 		<Popover.Trigger>
 			<Button
@@ -31,7 +31,7 @@
 				<Separator />
 
 				<div class="flex items-center justify-between">
-					<span class="text-muted-foreground text-sm">顯示網格</span>
+					<span class="text-sm text-muted-foreground">顯示網格</span>
 					<Switch
 						checked={settingsStore.gridVisible}
 						onCheckedChange={(checked: boolean) => {
@@ -42,7 +42,7 @@
 				</div>
 
 				<div class="flex items-center justify-between">
-					<span class="text-muted-foreground text-sm">顯示選取物件的Bounding Box</span>
+					<span class="text-sm text-muted-foreground">顯示選取物件的Bounding Box</span>
 					<Switch
 						checked={settingsStore.boundingBoxVisible}
 						onCheckedChange={(checked: boolean) => {

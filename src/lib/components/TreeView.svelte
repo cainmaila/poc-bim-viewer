@@ -28,7 +28,7 @@
 		<li class="flex flex-col">
 			<Collapsible.Root open={expandedIds.has(item.id)}>
 				<div
-					class="flex cursor-pointer items-center gap-1.5 overflow-hidden rounded px-2 py-1 text-[13px] text-ellipsis whitespace-nowrap text-gray-700 hover:bg-gray-100"
+					class="flex cursor-pointer items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap rounded px-2 py-1 text-[13px] text-gray-700 hover:bg-gray-100"
 					onclick={() => onSelect(item.id)}
 					role="button"
 					tabindex="0"

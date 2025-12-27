@@ -19,7 +19,7 @@
 				class="h-16 w-16 animate-spin rounded-full border-4 border-white/20 border-t-white"
 			></div>
 			<Progress value={progress} class="w-full" />
-			<div class="font-mono text-4xl font-bold text-white tabular-nums">{progress}%</div>
+			<div class="font-mono text-4xl font-bold tabular-nums text-white">{progress}%</div>
 			<div class="text-center text-base text-white/80">
 				{fromCache ? '從緩存讀取中...' : '載入模型中...'}
 			</div>

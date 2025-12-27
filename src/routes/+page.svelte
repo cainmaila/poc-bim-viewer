@@ -86,7 +86,7 @@
 		{/if}
 	</div>
 
-	<div class="pointer-events-none absolute top-0 bottom-0 left-0 z-10 flex">
+	<div class="pointer-events-none absolute bottom-0 left-0 top-0 z-10 flex">
 		<Sidebar treeData={modelStore.treeData} onSelect={handleSelect} />
 	</div>
 
@@ -101,9 +101,9 @@
 
 	{#if isDragOver}
 		<div
-			class="border-primary bg-primary/40 pointer-events-none absolute inset-0 z-[9000] flex items-center justify-center border-4 border-dashed backdrop-blur-sm"
+			class="pointer-events-none absolute inset-0 z-[9000] flex items-center justify-center border-4 border-dashed border-primary bg-primary/40 backdrop-blur-sm"
 		>
-			<div class="text-primary rounded-full bg-white px-8 py-4 font-semibold shadow-lg">
+			<div class="rounded-full bg-white px-8 py-4 font-semibold text-primary shadow-lg">
 				請在此處放開以載入模型
 			</div>
 		</div>
@@ -120,14 +120,14 @@
 	{#if modelStore.error}
 		<Alert.Root
 			variant="destructive"
-			class="absolute top-8 left-1/2 z-[10000] flex max-w-md -translate-x-1/2 flex-col items-center gap-4 shadow-xl"
+			class="absolute left-1/2 top-8 z-[10000] flex max-w-md -translate-x-1/2 flex-col items-center gap-4 shadow-xl"
 		>
 			<div class="text-4xl">⚠️</div>
 			<Alert.Description class="text-center text-base leading-relaxed">
 				{modelStore.error}
 			</Alert.Description>
 			<button
-				class="text-destructive rounded bg-white px-6 py-2 font-semibold transition-all hover:-translate-y-px hover:bg-gray-100 active:translate-y-0"
+				class="rounded bg-white px-6 py-2 font-semibold text-destructive transition-all hover:-translate-y-px hover:bg-gray-100 active:translate-y-0"
 				onclick={() => modelStore.loadModel(defaultModelUrl)}
 			>
 				重試
@@ -135,11 +135,3 @@
 		</Alert.Root>
 	{/if}
 </div>
-
-<style lang="postcss">
-	/* 確保Sidebar捕獲指針事件 */
-	:global(aside) {
-		pointer-events: auto;
-		box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
-	}
-</style>

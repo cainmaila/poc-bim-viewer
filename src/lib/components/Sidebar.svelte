@@ -13,7 +13,7 @@
 </script>
 
 <aside
-	class="z-[100] flex h-full flex-col overflow-hidden border-r border-gray-200 bg-white transition-all duration-300"
+	class="pointer-events-auto z-[100] flex h-full flex-col overflow-hidden border-r border-gray-200 bg-white shadow-[4px_0_16px_rgba(0,0,0,0.1)] transition-all duration-300"
 	class:w-[300px]={!isCollapsed}
 	class:w-12={isCollapsed}
 >
