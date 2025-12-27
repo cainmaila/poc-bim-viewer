@@ -21,7 +21,15 @@
       "Bash(pnpm check:*)",
       "mcp__filesystem__read_text_file",
       "mcp__filesystem__write_file",
-      "Bash(pnpm test:unit:*)"
+      "Bash(pnpm test:unit:*)",
+      "WebSearch",
+      "mcp__filesystem__read_multiple_files",
+      "WebFetch(domain:www.shadcn-svelte.com)",
+      "Bash(git checkout:*)",
+      "Bash(pnpx tailwindcss:*)",
+      "Bash(pnpm exec tailwindcss:*)",
+      "Bash(npx shadcn-svelte@latest add progress:*)",
+      "Bash(npx shadcn-svelte@latest add:*)"
     ]
   }
 }
