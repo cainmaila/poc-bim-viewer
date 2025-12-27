@@ -49,10 +49,10 @@
 			return
 		}
 
-		if (file.size > 50 * 1024 * 1024) {
+		if (file.size > 1024 * 1024 * 1024) {
 			modelStore.clearError()
 			// 設定臨時錯誤
-			modelStore.error = '模型過大，建議處理素材(>50MB)'
+			modelStore.error = '模型過大，建議處理素材(>1GB)'
 			return
 		}
 
