@@ -3,7 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { getModelFromCache, saveModelToCache } from './indexedDBCache'
 
 /**
- * Result of loading a GLB model
+ * 載入 GLB 模型的結果
  */
 export interface LoadResult {
 	scene: THREE.Group
@@ -11,21 +11,21 @@ export interface LoadResult {
 }
 
 /**
- * Progress callback function
+ * 進度回呼函式
  */
 export type ProgressCallback = (progress: number) => void
 
 /**
- * Load a GLB model with IndexedDB caching
+ * 以 IndexedDB 快取載入 GLB 模型
  *
- * Loading strategy:
- * 1. Check IndexedDB cache first
- * 2. If cached: Load from cache and parse
- * 3. If not cached: Download from network → Save to cache → Parse
+ * 載入流程：
+ * 1. 先檢查 IndexedDB 快取
+ * 2. 若有快取：從快取讀取並解析
+ * 3. 若無快取：從網路下載 → 儲存至快取 → 解析
  *
- * @param url - The URL of the GLB file to load
- * @param onProgress - Optional callback for loading progress (0-100)
- * @returns Promise resolving to the loaded scene and cache status
+ * @param url - 要載入的 GLB 檔案 URL
+ * @param onProgress - 選填：載入進度回呼（0-100）
+ * @returns 解析完成的場景與是否來自快取的 Promise
  */
 export async function loadGLBModel(
 	url: string,
@@ -71,9 +71,9 @@ export async function loadGLBModel(
 }
 
 /**
- * Load a GLB model from a local File object
- * @param file - The File object to load
- * @param onProgress - Optional progress callback
+ * 從本機 File 物件載入 GLB 模型
+ * @param file - 要載入的 File 物件
+ * @param onProgress - 選填：進度回呼
  */
 export async function loadGLBFromFile(
 	file: File,
@@ -95,10 +95,10 @@ export async function loadGLBFromFile(
 }
 
 /**
- * Download a GLB file from a URL
- * @param url - The URL to download from
- * @param onProgress - Optional progress callback (0-1)
- * @returns Promise resolving to the ArrayBuffer
+ * 從 URL 下載 GLB 檔案
+ * @param url - 下載來源的 URL
+ * @param onProgress - 選填：進度回呼（0-1）
+ * @returns 下載完成的 ArrayBuffer 之 Promise
  */
 async function downloadGLB(
 	url: string,
@@ -134,19 +134,19 @@ async function downloadGLB(
 }
 
 /**
- * Parse a GLB file from ArrayBuffer using GLTFLoader
- * @param arrayBuffer - The GLB file data
- * @returns Promise resolving to the parsed scene
+ * 使用 GLTFLoader 從 ArrayBuffer 解析 GLB 檔案
+ * @param arrayBuffer - GLB 檔案的資料
+ * @returns 解析後場景之 Promise
  */
 async function parseGLBFromArrayBuffer(arrayBuffer: ArrayBuffer): Promise<THREE.Group> {
 	return new Promise((resolve, reject) => {
 		const loader = new GLTFLoader()
 
-		// 將ArrayBuffer轉換為GLTFLoader的數據URL
-		// 注意：GLTFLoader.parse()期望數據採用特定格式
+		// 將 ArrayBuffer 轉為 GLTFLoader 可用的資料 URL
+		// 注意：GLTFLoader.parse() 預期資料採用特定格式
 		loader.parse(
 			arrayBuffer,
-			'', // 資源路徑（GLB為空）
+			'', // 資源路徑（GLB 為空）
 			(gltf) => {
 				resolve(gltf.scene)
 			},
