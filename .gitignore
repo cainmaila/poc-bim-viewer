@@ -26,5 +26,6 @@ vite.config.ts.timestamp-*
 *.glb
 
 #AI
-.claude/**
+.serena
+.claude
 CLAUDE.md
