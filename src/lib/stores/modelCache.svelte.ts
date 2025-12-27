@@ -1,6 +1,11 @@
 import * as THREE from 'three'
 import { loadGLBModel, loadGLBFromFile } from '../utils/gltfLoader'
-import { setActiveModelKey, saveModelToCache, getModelFromCache } from '../utils/indexedDBCache'
+import {
+	setActiveModelKey,
+	saveModelToCache,
+	getModelFromCache,
+	clearCache
+} from '../utils/indexedDBCache'
 
 /**
  * Tree item structure for sidebar navigation
@@ -222,6 +227,19 @@ class ModelCacheStore {
 	 */
 	clearError(): void {
 		this._error = null
+	}
+
+	/**
+	 * Unload the current model, clear cache, and reload the page
+	 */
+	async unloadModel(): Promise<void> {
+		this.clearModel()
+		await clearCache()
+		console.log('[ModelCache] Model unloaded and cache cleared')
+		// Reload the page after a short delay
+		setTimeout(() => {
+			window.location.reload()
+		}, 300)
 	}
 }
 

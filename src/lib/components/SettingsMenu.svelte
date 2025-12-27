@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { settingsStore } from '$lib/stores/settings.svelte'
+	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { Button } from '$lib/components/ui/button'
 	import * as Popover from '$lib/components/ui/popover'
 	import { Switch } from '$lib/components/ui/switch'
 	import { Separator } from '$lib/components/ui/separator'
-	import { Settings } from 'lucide-svelte'
+	import { Settings, Trash2 } from 'lucide-svelte'
 
 	interface Props {
 		onGridToggle?: (visible: boolean) => void
@@ -103,6 +104,20 @@
 						}}
 					/>
 				</div>
+
+				<Separator />
+				<h3 class="text-sm font-semibold">模型管理</h3>
+
+				<Button
+					variant="destructive"
+					class="w-full"
+					onclick={async () => {
+						await modelStore.unloadModel()
+					}}
+				>
+					<Trash2 size={16} class="mr-2" />
+					卸載模型
+				</Button>
 			</div>
 		</Popover.Content>
 	</Popover.Root>
