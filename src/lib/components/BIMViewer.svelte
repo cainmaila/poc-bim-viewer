@@ -30,12 +30,13 @@
 	let boundingBoxEnabled = $state(false)
 
 	// WASD 鍵盤平移控制（使用鍵盤碼，不受大小寫影響）
-	let keysPressed = $state({
-		KeyW: false,
-		KeyA: false,
-		KeyS: false,
-		KeyD: false
-	})
+	// eslint-disable-next-line svelte/prefer-svelte-reactivity
+	let keysPressed = new Map<string, boolean>([
+		['KeyW', false],
+		['KeyA', false],
+		['KeyS', false],
+		['KeyD', false]
+	])
 
 	// 初始化Three.js場景
 	function initScene() {
@@ -142,13 +143,13 @@
 	function handleKeyDown(e: KeyboardEvent) {
 		if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code)) {
 			e.preventDefault() // 防止頁面滾動
-			keysPressed[e.code as keyof typeof keysPressed] = true
+			keysPressed.set(e.code, true)
 		}
 	}
 
 	function handleKeyUp(e: KeyboardEvent) {
 		if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code)) {
-			keysPressed[e.code as keyof typeof keysPressed] = false
+			keysPressed.set(e.code, false)
 		}
 	}
 
@@ -169,10 +170,10 @@
 
 		// 合成移動方向（只在水平面上移動）
 		const moveDirection = new THREE.Vector3()
-		if (keysPressed.KeyW) moveDirection.add(forwardFlat) // 向前（水平面）
-		if (keysPressed.KeyS) moveDirection.sub(forwardFlat) // 向後（水平面）
-		if (keysPressed.KeyD) moveDirection.add(right) // 向右（水平面）
-		if (keysPressed.KeyA) moveDirection.sub(right) // 向左（水平面）
+		if (keysPressed.get('KeyW')) moveDirection.add(forwardFlat) // 向前（水平面）
+		if (keysPressed.get('KeyS')) moveDirection.sub(forwardFlat) // 向後（水平面）
+		if (keysPressed.get('KeyD')) moveDirection.add(right) // 向右（水平面）
+		if (keysPressed.get('KeyA')) moveDirection.sub(right) // 向左（水平面）
 
 		// 執行平移
 		if (moveDirection.length() > 0) {
@@ -241,6 +242,7 @@
 				// 移除鍵盤事件監聽器
 				window.removeEventListener('keydown', handleKeyDown)
 				window.removeEventListener('keyup', handleKeyUp)
+				keysPressed.clear()
 			}
 		}
 	})
