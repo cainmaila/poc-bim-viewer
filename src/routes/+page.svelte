@@ -5,12 +5,10 @@
 	import LoadingOverlay from '$lib/components/LoadingOverlay.svelte'
 	import * as Alert from '$lib/components/ui/alert'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
-	import { base } from '$app/paths'
 	import { onMount } from 'svelte'
 	import { getActiveModelKey, getModelFromCache } from '$lib/utils/indexedDBCache'
-	import { Box, AlertTriangle } from 'lucide-svelte'
+	import { Box, TriangleAlert } from 'lucide-svelte'
 
-	const defaultModelUrl = `${base}/building.glb`
 	let isDragOver = $state(false)
 	let viewerRef = $state<ReturnType<typeof BIMViewer>>()
 
@@ -123,15 +121,15 @@
 			variant="destructive"
 			class="absolute left-1/2 top-8 z-[10000] flex max-w-md -translate-x-1/2 flex-col items-center gap-4 shadow-xl"
 		>
-			<AlertTriangle size={32} />
+			<TriangleAlert size={32} />
 			<Alert.Description class="text-center text-base leading-relaxed">
 				{modelStore.error}
 			</Alert.Description>
 			<button
 				class="rounded bg-card px-6 py-2 font-semibold text-destructive transition-all hover:-translate-y-px hover:bg-card/80 active:translate-y-0"
-				onclick={() => modelStore.loadModel(defaultModelUrl)}
+				onclick={() => modelStore.clearError()}
 			>
-				重試
+				清除錯誤
 			</button>
 		</Alert.Root>
 	{/if}
