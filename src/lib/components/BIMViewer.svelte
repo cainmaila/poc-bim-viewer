@@ -29,6 +29,14 @@
 	let boundingBoxHelper: THREE.BoxHelper | null = null
 	let boundingBoxEnabled = $state(false)
 
+	// WASD 鍵盤平移控制（使用鍵盤碼，不受大小寫影響）
+	let keysPressed = $state({
+		KeyW: false,
+		KeyA: false,
+		KeyS: false,
+		KeyD: false
+	})
+
 	// 初始化Three.js場景
 	function initScene() {
 		if (!canvasRef) return
@@ -130,9 +138,58 @@
 		}
 	}
 
+	// WASD 鍵盤事件處理
+	function handleKeyDown(e: KeyboardEvent) {
+		if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code)) {
+			e.preventDefault() // 防止頁面滾動
+			keysPressed[e.code as keyof typeof keysPressed] = true
+		}
+	}
+
+	function handleKeyUp(e: KeyboardEvent) {
+		if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code)) {
+			keysPressed[e.code as keyof typeof keysPressed] = false
+		}
+	}
+
+	// 更新 WASD 平移移動
+	function updatePanMovement() {
+		if (!scene || !camera || !controls) return
+
+		// 計算攝影機視線方向
+		const forward = new THREE.Vector3().copy(controls.target).sub(camera.position).normalize()
+
+		// 投影到水平面（去掉 Y 分量，保持在當前高度移動）
+		const forwardFlat = new THREE.Vector3(forward.x, 0, forward.z).normalize()
+
+		// 計算水平面上的右向量
+		const right = new THREE.Vector3()
+			.crossVectors(forwardFlat, new THREE.Vector3(0, 1, 0))
+			.normalize()
+
+		// 合成移動方向（只在水平面上移動）
+		const moveDirection = new THREE.Vector3()
+		if (keysPressed.KeyW) moveDirection.add(forwardFlat) // 向前（水平面）
+		if (keysPressed.KeyS) moveDirection.sub(forwardFlat) // 向後（水平面）
+		if (keysPressed.KeyD) moveDirection.add(right) // 向右（水平面）
+		if (keysPressed.KeyA) moveDirection.sub(right) // 向左（水平面）
+
+		// 執行平移
+		if (moveDirection.length() > 0) {
+			const moveSpeed = 0.2
+			const offset = moveDirection.normalize().multiplyScalar(moveSpeed)
+
+			camera.position.add(offset)
+			controls.target.add(offset)
+		}
+	}
+
 	// 動畫循環
 	function animate() {
 		animationFrameId = requestAnimationFrame(animate)
+
+		// 更新 WASD 平移
+		updatePanMovement()
 
 		// 更新控制項
 		controls.update()
@@ -157,6 +214,10 @@
 			})
 			resizeObserver.observe(canvasRef)
 
+			// 添加鍵盤事件監聽器
+			window.addEventListener('keydown', handleKeyDown)
+			window.addEventListener('keyup', handleKeyUp)
+
 			// 清理
 			return () => {
 				resizeObserver?.disconnect()
@@ -176,6 +237,10 @@
 					postProcessingManager.dispose()
 					postProcessingManager = null
 				}
+
+				// 移除鍵盤事件監聽器
+				window.removeEventListener('keydown', handleKeyDown)
+				window.removeEventListener('keyup', handleKeyUp)
 			}
 		}
 	})
