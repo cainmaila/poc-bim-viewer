@@ -2,17 +2,15 @@
 	import * as THREE from 'three'
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
-	import { calculateOptimalDistance, selectViewDirection } from '$lib/utils/cameraUtils'
 	import { PostProcessingManager } from '$lib/utils/postProcessingManager'
 	import { settingsStore } from '$lib/stores/settings.svelte'
+	import { PluginManager, CameraPlugin } from '$lib/plugins'
 
 	interface Props {
 		autoRotate?: boolean
 	}
 
 	let { autoRotate = false }: Props = $props()
-
-	const CAMERA_PADDING = 0.15 // 15% 邊距
 
 	let canvasRef = $state<HTMLCanvasElement | null>(null)
 	let scene: THREE.Scene
@@ -23,6 +21,7 @@
 	let resizeObserver: ResizeObserver
 	let gridHelper: THREE.GridHelper
 	let postProcessingManager: PostProcessingManager | null = null
+	let pluginManager: PluginManager
 
 	// 邊界盒狀態
 	let currentSelectedObject: THREE.Object3D | null = null
@@ -91,6 +90,23 @@
 		// 初始化後期處理管理器（從 settingsStore 讀取配置）
 		const config = settingsStore.postProcessing
 		postProcessingManager = new PostProcessingManager(scene, camera, renderer, config)
+
+		// 初始化 PluginManager
+		pluginManager = new PluginManager({
+			scene,
+			camera,
+			renderer,
+			controls,
+			canvas: canvasRef
+		})
+
+		// 註冊 Plugin
+		pluginManager.register('camera', new CameraPlugin())
+
+		// 初始化所有 Plugin
+		pluginManager.init().then(() => {
+			console.log('[BIMViewer] PluginManager initialized')
+		})
 	}
 
 	// 設定燈光（暗色主題 + 暖色照明）
@@ -186,14 +202,25 @@
 	}
 
 	// 動畫循環
+	let lastTime = performance.now()
 	function animate() {
 		animationFrameId = requestAnimationFrame(animate)
+
+		// 計算 deltaTime
+		const currentTime = performance.now()
+		const deltaTime = (currentTime - lastTime) / 1000 // 轉換為秒
+		lastTime = currentTime
 
 		// 更新 WASD 平移
 		updatePanMovement()
 
 		// 更新控制項
 		controls.update()
+
+		// 更新所有 Plugin
+		if (pluginManager) {
+			pluginManager.update(deltaTime)
+		}
 
 		// 渲染場景（使用後期處理或直接渲染）
 		if (postProcessingManager) {
@@ -225,6 +252,7 @@
 				cancelAnimationFrame(animationFrameId)
 				controls?.dispose()
 				renderer?.dispose()
+				pluginManager?.dispose()
 
 				// 清理邊界盒輔助工具
 				if (boundingBoxHelper) {
@@ -303,31 +331,15 @@
 	// 移除：不再需要監聽設置變化（切換效果會自動重新整理頁面）
 
 	function resetCameraView() {
-		if (!scene || !camera || !controls) return
-
-		const model = scene.children.find((child) => child.userData.isModel)
-		if (!model) return
-
-		const box = new THREE.Box3().setFromObject(model)
-
-		// 使用等距視角
-		const isometricDirection = new THREE.Vector3(1, 1, 1).normalize()
-
-		// 計算最佳距離
-		const distance = calculateOptimalDistance(box, camera, isometricDirection, CAMERA_PADDING)
-
-		// 將相機定位在45/45度
-		camera.position.copy(isometricDirection.multiplyScalar(distance))
-		controls.target.set(0, 0, 0)
-		camera.lookAt(0, 0, 0)
-		controls.update()
+		const cameraPlugin = pluginManager?.getPlugin<CameraPlugin>('camera')
+		cameraPlugin?.resetCameraView()
 	}
 
 	/**
 	 * Fly to a specific object by name or UUID
 	 */
 	export function flyTo(objectName: string) {
-		if (!scene || !camera || !controls) return
+		if (!scene) return
 
 		const model = scene.children.find((child) => child.userData.isModel)
 		if (!model) return
@@ -351,57 +363,17 @@
 				postProcessingManager.setOutlineObjects([target])
 			}
 
-			const box = new THREE.Box3().setFromObject(target)
-			const center = box.getCenter(new THREE.Vector3())
-
-			// 獲取當前視角方向
-			const currentDirection = new THREE.Vector3()
-				.copy(camera.position)
-				.sub(controls.target)
-				.normalize()
-
-			// 選擇最佳視角（處理邊緣案例）
-			const viewDirection = selectViewDirection(currentDirection, box)
-
-			// 使用改進的演算法計算最佳距離
-			const distance = calculateOptimalDistance(box, camera, viewDirection, CAMERA_PADDING)
-
-			// 計算目標相機位置
-			const targetPos = center.clone().add(viewDirection.clone().multiplyScalar(distance))
-
-			// 動畫相機移動
-			animateCameraTo(targetPos, center)
+			// 使用 CameraPlugin 飛向目標
+			const cameraPlugin = pluginManager?.getPlugin<CameraPlugin>('camera')
+			cameraPlugin?.flyToObject(target)
 		}
 	}
 
 	/**
-	 * Animate camera to target position with easing
+	 * Get EventBus for external event listening
 	 */
-	function animateCameraTo(targetPos: THREE.Vector3, targetLookAt: THREE.Vector3) {
-		const startPos = camera.position.clone()
-		const startLookAt = controls.target.clone()
-		const duration = 1200 // 1.2秒
-		const startTime = performance.now()
-
-		function animate() {
-			const elapsed = performance.now() - startTime
-			const progress = Math.min(elapsed / duration, 1)
-
-			// 緩入緩出立方
-			const eased =
-				progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2
-
-			// 插值位置和注視目標
-			camera.position.lerpVectors(startPos, targetPos, eased)
-			controls.target.lerpVectors(startLookAt, targetLookAt, eased)
-			controls.update()
-
-			if (progress < 1) {
-				requestAnimationFrame(animate)
-			}
-		}
-
-		animate()
+	export function getEventBus() {
+		return pluginManager?.getEventBus()
 	}
 
 	function applyXray(target: THREE.Object3D) {
