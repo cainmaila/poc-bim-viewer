@@ -5,7 +5,20 @@
 	import * as Popover from '$lib/components/ui/popover'
 	import { Switch } from '$lib/components/ui/switch'
 	import { Separator } from '$lib/components/ui/separator'
-	import { Settings, Trash2 } from 'lucide-svelte'
+	import {
+		Settings,
+		Trash2,
+		CircleHelp,
+		Mouse,
+		Keyboard,
+		RotateCw,
+		ZoomIn,
+		Move,
+		ArrowUp,
+		ArrowDown,
+		ArrowLeft,
+		ArrowRight
+	} from 'lucide-svelte'
 
 	interface Props {
 		onGridToggle?: (visible: boolean) => void
@@ -15,7 +28,103 @@
 	let { onGridToggle, onBoundingBoxToggle }: Props = $props()
 </script>
 
-<div class="absolute right-4 top-4 z-[100]">
+<div class="absolute right-4 top-4 z-[100] flex gap-2">
+	<!-- 操作說明按鈕 -->
+	<Popover.Root>
+		<Popover.Trigger>
+			<Button
+				variant="outline"
+				size="icon"
+				class="h-10 w-10 rounded-full bg-white/90 shadow-md transition-transform hover:scale-105"
+			>
+				<CircleHelp size={20} />
+				<span class="sr-only">操作說明</span>
+			</Button>
+		</Popover.Trigger>
+		<Popover.Content class="w-96" align="end">
+			<div class="space-y-4">
+				<!-- 標題 -->
+				<div class="flex items-center gap-2">
+					<CircleHelp size={18} class="text-primary" />
+					<h3 class="text-sm font-semibold">操作說明</h3>
+				</div>
+				<Separator />
+
+				<!-- 滑鼠操作 -->
+				<div class="space-y-3">
+					<h4 class="flex items-center gap-2 text-sm font-medium">
+						<Mouse size={16} class="text-muted-foreground" />
+						滑鼠操作
+					</h4>
+					<div class="space-y-2 text-sm">
+						<div class="flex items-start gap-3">
+							<RotateCw size={16} class="mt-0.5 text-primary" />
+							<div>
+								<span class="font-medium">左鍵拖曳</span>
+								<span class="ml-2 text-muted-foreground">旋轉視角</span>
+							</div>
+						</div>
+						<div class="flex items-start gap-3">
+							<ZoomIn size={16} class="mt-0.5 text-primary" />
+							<div>
+								<span class="font-medium">滾輪滾動</span>
+								<span class="ml-2 text-muted-foreground">縮放視圖</span>
+							</div>
+						</div>
+						<div class="flex items-start gap-3">
+							<Move size={16} class="mt-0.5 text-primary" />
+							<div>
+								<span class="font-medium">右鍵拖曳</span>
+								<span class="ml-2 text-muted-foreground">平移視角</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<Separator />
+
+				<!-- 鍵盤操作 -->
+				<div class="space-y-3">
+					<h4 class="flex items-center gap-2 text-sm font-medium">
+						<Keyboard size={16} class="text-muted-foreground" />
+						鍵盤操作
+					</h4>
+					<div class="space-y-2 text-sm">
+						<div class="flex items-start gap-3">
+							<ArrowUp size={16} class="mt-0.5 text-primary" />
+							<div>
+								<span class="font-medium">W 鍵</span>
+								<span class="ml-2 text-muted-foreground">向前移動（水平面）</span>
+							</div>
+						</div>
+						<div class="flex items-start gap-3">
+							<ArrowDown size={16} class="mt-0.5 text-primary" />
+							<div>
+								<span class="font-medium">S 鍵</span>
+								<span class="ml-2 text-muted-foreground">向後移動（水平面）</span>
+							</div>
+						</div>
+						<div class="flex items-start gap-3">
+							<ArrowLeft size={16} class="mt-0.5 text-primary" />
+							<div>
+								<span class="font-medium">A 鍵</span>
+								<span class="ml-2 text-muted-foreground">向左移動（水平面）</span>
+							</div>
+						</div>
+						<div class="flex items-start gap-3">
+							<ArrowRight size={16} class="mt-0.5 text-primary" />
+							<div>
+								<span class="font-medium">D 鍵</span>
+								<span class="ml-2 text-muted-foreground">向右移動（水平面）</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</Popover.Content>
+	</Popover.Root>
+
+	<!-- 設定按鈕 -->
 	<Popover.Root>
 		<Popover.Trigger>
 			<Button
