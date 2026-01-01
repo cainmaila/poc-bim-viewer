@@ -17,15 +17,61 @@
 		ArrowUp,
 		ArrowDown,
 		ArrowLeft,
-		ArrowRight
+		ArrowRight,
+		Info
 	} from 'lucide-svelte'
 
 	interface Props {
 		onGridToggle?: (visible: boolean) => void
 		onBoundingBoxToggle?: (visible: boolean) => void
+		needsReload?: boolean
 	}
 
-	let { onGridToggle, onBoundingBoxToggle }: Props = $props()
+	let { onGridToggle, onBoundingBoxToggle, needsReload = $bindable(false) }: Props = $props()
+
+	// 需要重新整理才生效的設定項目變更追蹤
+	let showReloadDialog = $state(false)
+	let pendingSettingChange: (() => void) | null = $state(null)
+	let hasShownReloadDialog = $state(false) // 追蹤是否已顯示過對話框
+
+	/**
+	 * 處理需要重新整理的設定變更
+	 * 對話框只會在第一次切換時跳出，之後直接保存設定
+	 * 確認 → 立即重新整理
+	 * 取消 → 保存設定，顯示覆蓋層提示
+	 */
+	function handleSettingRequiringReload(toggleFn: () => void) {
+		if (hasShownReloadDialog) {
+			// 已經顯示過對話框，直接執行設定變更
+			toggleFn()
+			needsReload = true
+		} else {
+			// 第一次，顯示對話框
+			pendingSettingChange = toggleFn
+			showReloadDialog = true
+		}
+	}
+
+	function handleReloadConfirm() {
+		hasShownReloadDialog = true
+		if (pendingSettingChange) {
+			pendingSettingChange()
+			pendingSettingChange = null
+		}
+		// 給設定儲存一點時間
+		setTimeout(() => window.location.reload(), 300)
+	}
+
+	function handleReloadCancel() {
+		hasShownReloadDialog = true
+		// 仍然執行設定變更並保存，只是不重新整理
+		if (pendingSettingChange) {
+			pendingSettingChange()
+			pendingSettingChange = null
+		}
+		// 設置需要重新整理狀態
+		needsReload = true
+	}
 </script>
 
 <div class="absolute right-4 top-4 z-[100] flex gap-2">
@@ -35,7 +81,7 @@
 			<Button
 				variant="outline"
 				size="icon"
-				class="h-10 w-10 rounded-full bg-white/90 shadow-md transition-transform hover:scale-105"
+				class="h-10 w-10 rounded-full border-white/20 bg-black/60 text-white/90 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-black/80 hover:text-white"
 			>
 				<CircleHelp size={20} />
 				<span class="sr-only">操作說明</span>
@@ -189,7 +235,7 @@
 			<Button
 				variant="outline"
 				size="icon"
-				class="h-10 w-10 rounded-full bg-white/90 shadow-md transition-transform hover:scale-105"
+				class="h-10 w-10 rounded-full border-white/20 bg-black/60 text-white/90 shadow-lg backdrop-blur-sm transition-all hover:scale-105 hover:bg-black/80 hover:text-white"
 			>
 				<Settings size={20} />
 				<span class="sr-only">系統設定</span>
@@ -229,11 +275,8 @@
 					</div>
 					<Switch
 						checked={settingsStore.rayBasedZoom}
-						onCheckedChange={() => {
-							settingsStore.toggleRayBasedZoom()
-							// 自動立即重新整理頁面套用新配置
-							setTimeout(() => window.location.reload(), 300)
-						}}
+						onCheckedChange={() =>
+							handleSettingRequiringReload(() => settingsStore.toggleRayBasedZoom())}
 					/>
 				</div>
 
@@ -258,11 +301,7 @@
 					<span class="text-sm text-muted-foreground">Bloom（光暈）</span>
 					<Switch
 						checked={settingsStore.postProcessing.bloomEnabled}
-						onCheckedChange={() => {
-							settingsStore.toggleBloom()
-							// 自動立即重新整理頁面套用新配置
-							setTimeout(() => window.location.reload(), 300)
-						}}
+						onCheckedChange={() => handleSettingRequiringReload(() => settingsStore.toggleBloom())}
 					/>
 				</div>
 
@@ -270,11 +309,7 @@
 					<span class="text-sm text-muted-foreground">SSAO（環境光遮蔽）</span>
 					<Switch
 						checked={settingsStore.postProcessing.ssaoEnabled}
-						onCheckedChange={() => {
-							settingsStore.toggleSSAO()
-							// 自動立即重新整理頁面套用新配置
-							setTimeout(() => window.location.reload(), 300)
-						}}
+						onCheckedChange={() => handleSettingRequiringReload(() => settingsStore.toggleSSAO())}
 					/>
 				</div>
 
@@ -282,11 +317,8 @@
 					<span class="text-sm text-muted-foreground">Outline（邊緣輪廓）</span>
 					<Switch
 						checked={settingsStore.postProcessing.outlineEnabled}
-						onCheckedChange={() => {
-							settingsStore.toggleOutline()
-							// 自動立即重新整理頁面套用新配置
-							setTimeout(() => window.location.reload(), 300)
-						}}
+						onCheckedChange={() =>
+							handleSettingRequiringReload(() => settingsStore.toggleOutline())}
 					/>
 				</div>
 
@@ -294,11 +326,7 @@
 					<span class="text-sm text-muted-foreground">SMAA（抗鋸齒）</span>
 					<Switch
 						checked={settingsStore.postProcessing.smaaEnabled}
-						onCheckedChange={() => {
-							settingsStore.toggleSMAA()
-							// 自動立即重新整理頁面套用新配置
-							setTimeout(() => window.location.reload(), 300)
-						}}
+						onCheckedChange={() => handleSettingRequiringReload(() => settingsStore.toggleSMAA())}
 					/>
 				</div>
 
@@ -319,3 +347,49 @@
 		</Popover.Content>
 	</Popover.Root>
 </div>
+
+<!-- 重新整理確認對話框 -->
+{#if showReloadDialog}
+	<div
+		class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+		role="dialog"
+		aria-modal="true"
+		aria-labelledby="reload-dialog-title"
+	>
+		<div class="mx-4 w-full max-w-md rounded-xl border border-border/50 bg-card p-6 shadow-2xl">
+			<div class="mb-4 flex items-center gap-3">
+				<div
+					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/20"
+				>
+					<Info size={20} class="text-blue-400" />
+				</div>
+				<h3 id="reload-dialog-title" class="text-lg font-semibold text-foreground">
+					需要重新整理頁面
+				</h3>
+			</div>
+			<p class="mb-6 pl-[52px] text-sm leading-relaxed text-muted-foreground">
+				此設定變更需要重新整理頁面才能生效。確定要立即重新整理嗎？
+			</p>
+			<div class="flex gap-3">
+				<button
+					class="flex-1 rounded-lg border border-border/50 bg-muted/50 px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+					onclick={() => {
+						showReloadDialog = false
+						handleReloadCancel()
+					}}
+				>
+					稍後再說
+				</button>
+				<button
+					class="flex-1 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-600 hover:shadow-md"
+					onclick={() => {
+						showReloadDialog = false
+						handleReloadConfirm()
+					}}
+				>
+					立即重新整理
+				</button>
+			</div>
+		</div>
+	</div>
+{/if}

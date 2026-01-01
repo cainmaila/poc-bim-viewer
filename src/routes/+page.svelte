@@ -7,12 +7,13 @@
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { onMount } from 'svelte'
 	import { getActiveModelKey, getModelFromCache } from '$lib/utils/indexedDBCache'
-	import { Box, TriangleAlert } from 'lucide-svelte'
+	import { Box, TriangleAlert, RefreshCw } from 'lucide-svelte'
 
 	let isDragOver = $state(false)
 	let viewerRef = $state<ReturnType<typeof BIMViewer>>()
 	let fpsMode = $state(false)
 	let showFPSNotification = $state(false)
+	let needsReload = $state(false)
 
 	onMount(async () => {
 		const activeKey = await getActiveModelKey()
@@ -110,6 +111,7 @@
 		</div>
 
 		<SettingsMenu
+			bind:needsReload
 			onGridToggle={(visible) => {
 				viewerRef?.setGridVisible(visible)
 			}}
@@ -124,6 +126,19 @@
 			class="pointer-events-none absolute left-1/2 top-8 z-[10000] flex -translate-x-1/2 items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-6 py-3 font-semibold text-primary shadow-xl backdrop-blur-sm"
 		>
 			<span>按 ESC 鍵退出 FPS 模式</span>
+		</div>
+	{/if}
+
+	{#if needsReload}
+		<div
+			class="pointer-events-none absolute inset-0 z-[8000] flex items-end justify-center bg-black/30 backdrop-blur-[2px]"
+		>
+			<div
+				class="mb-8 flex items-center gap-3 rounded-full border border-amber-400/40 bg-amber-900/80 px-6 py-3 text-amber-100 shadow-2xl"
+			>
+				<RefreshCw size={20} class="animate-spin" style="animation-duration: 3s" />
+				<span class="font-medium">設定已變更，請重新整理頁面以套用</span>
+			</div>
 		</div>
 	{/if}
 
