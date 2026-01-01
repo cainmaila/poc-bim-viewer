@@ -62,22 +62,15 @@
 							<div class="flex items-start gap-3">
 								<RotateCw size={16} class="mt-0.5 text-primary" />
 								<div>
-									<span class="font-medium">右鍵拖曳</span>
-									<span class="ml-2 text-muted-foreground">FPS 視角旋轉</span>
-								</div>
-							</div>
-							<div class="flex items-start gap-3">
-								<ZoomIn size={16} class="mt-0.5 text-primary" />
-								<div>
-									<span class="font-medium">滾輪滾動</span>
-									<span class="ml-2 text-muted-foreground">縮放視圖</span>
+									<span class="font-medium">移動滑鼠</span>
+									<span class="ml-2 text-muted-foreground">旋轉視角（滑鼠鎖定）</span>
 								</div>
 							</div>
 							<div class="flex items-start gap-3">
 								<Move size={16} class="mt-0.5 text-primary" />
 								<div>
-									<span class="font-medium">右鍵 + Shift 拖曳</span>
-									<span class="ml-2 text-muted-foreground">平移視角</span>
+									<span class="font-medium">滾輪滾動</span>
+									<span class="ml-2 text-muted-foreground">沿視線前進/後退</span>
 								</div>
 							</div>
 						{:else}
@@ -122,28 +115,35 @@
 								<ArrowUp size={16} class="mt-0.5 text-primary" />
 								<div>
 									<span class="font-medium">W 鍵</span>
-									<span class="ml-2 text-muted-foreground">朝視角方向前進</span>
+									<span class="ml-2 text-muted-foreground">沿視線前進</span>
 								</div>
 							</div>
 							<div class="flex items-start gap-3">
 								<ArrowDown size={16} class="mt-0.5 text-primary" />
 								<div>
 									<span class="font-medium">S 鍵</span>
-									<span class="ml-2 text-muted-foreground">朝視角方向後退</span>
+									<span class="ml-2 text-muted-foreground">沿視線後退</span>
 								</div>
 							</div>
 							<div class="flex items-start gap-3">
 								<ArrowLeft size={16} class="mt-0.5 text-primary" />
 								<div>
 									<span class="font-medium">A 鍵</span>
-									<span class="ml-2 text-muted-foreground">朝視角左側移動</span>
+									<span class="ml-2 text-muted-foreground">向左平移</span>
 								</div>
 							</div>
 							<div class="flex items-start gap-3">
 								<ArrowRight size={16} class="mt-0.5 text-primary" />
 								<div>
 									<span class="font-medium">D 鍵</span>
-									<span class="ml-2 text-muted-foreground">朝視角右側移動</span>
+									<span class="ml-2 text-muted-foreground">向右平移</span>
+								</div>
+							</div>
+							<div class="flex items-start gap-3">
+								<Keyboard size={16} class="mt-0.5 text-primary" />
+								<div>
+									<span class="font-medium">ESC 鍵</span>
+									<span class="ml-2 text-muted-foreground">退出 FPS 模式</span>
 								</div>
 							</div>
 						{:else}
@@ -239,8 +239,8 @@
 
 				<div class="flex items-center justify-between">
 					<div class="flex flex-col gap-0.5">
-						<span class="text-sm text-muted-foreground">FPS 滑鼠控制</span>
-						<span class="text-xs text-muted-foreground/70">右鍵拖曳旋轉視角（遊戲操作）</span>
+						<span class="text-sm text-muted-foreground">FPS 模式</span>
+						<span class="text-xs text-muted-foreground/70">第一人稱視角漫遊（滑鼠鎖定）</span>
 					</div>
 					<Switch
 						checked={settingsStore.fpsMode}
