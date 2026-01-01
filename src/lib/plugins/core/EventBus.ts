@@ -39,6 +39,10 @@ export interface StandardEvents {
 	// Settings Events
 	'settings:gridToggle': { visible: boolean }
 	'settings:boundingBoxToggle': { visible: boolean }
+
+	// FPS Control Events
+	'fps:modeChanged': { enabled: boolean }
+	'fps:rotationUpdate': { yaw: number; pitch: number }
 }
 
 /**

@@ -4,7 +4,7 @@
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { PostProcessingManager } from '$lib/utils/postProcessingManager'
 	import { settingsStore } from '$lib/stores/settings.svelte'
-	import { PluginManager, CameraPlugin } from '$lib/plugins'
+	import { PluginManager, CameraPlugin, FPSControlsPlugin } from '$lib/plugins'
 
 	interface Props {
 		autoRotate?: boolean
@@ -102,6 +102,7 @@
 
 		// 註冊 Plugin
 		pluginManager.register('camera', new CameraPlugin())
+		pluginManager.register('fpsControls', new FPSControlsPlugin())
 
 		// 初始化所有 Plugin
 		pluginManager.init().then(() => {
@@ -173,6 +174,12 @@
 	function updatePanMovement() {
 		if (!scene || !camera || !controls) return
 
+		// 檢查 FPS 模式是否啟用（FPS Plugin 接管 WASD）
+		const fpsPlugin = pluginManager?.getPlugin<FPSControlsPlugin>('fpsControls')
+		if (fpsPlugin?.isEnabled()) {
+			return // FPS Plugin 接管 WASD
+		}
+
 		// 計算攝影機視線方向
 		const forward = new THREE.Vector3().copy(controls.target).sub(camera.position).normalize()
 
@@ -214,8 +221,11 @@
 		// 更新 WASD 平移
 		updatePanMovement()
 
-		// 更新控制項
-		controls.update()
+		// 更新控制項（FPS 模式時跳過，讓 PointerLockControls 控制相機）
+		const fpsPlugin = pluginManager?.getPlugin<FPSControlsPlugin>('fpsControls')
+		if (!fpsPlugin?.isEnabled()) {
+			controls.update()
+		}
 
 		// 更新所有 Plugin
 		if (pluginManager) {

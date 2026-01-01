@@ -11,6 +11,8 @@
 
 	let isDragOver = $state(false)
 	let viewerRef = $state<ReturnType<typeof BIMViewer>>()
+	let fpsMode = $state(false)
+	let showFPSNotification = $state(false)
 
 	onMount(async () => {
 		const activeKey = await getActiveModelKey()
@@ -20,6 +22,23 @@
 				// 從緩存載入模型
 				await modelStore.loadModelFromCache(activeKey)
 			}
+		}
+
+		// 監聽 FPS 模式變化
+		const eventBus = viewerRef?.getEventBus()
+		if (eventBus) {
+			eventBus.on('fps:modeChanged', (data: { enabled: boolean }) => {
+				fpsMode = data.enabled
+
+				// 進入 FPS 模式時顯示提示
+				if (data.enabled) {
+					showFPSNotification = true
+					// 3 秒後自動隱藏
+					setTimeout(() => {
+						showFPSNotification = false
+					}, 3000)
+				}
+			})
 		}
 	})
 
@@ -43,7 +62,7 @@
 		if (!file.name.toLowerCase().endsWith('.glb')) {
 			modelStore.clearError()
 			// 設定臨時錯誤
-			modelStore.error = '檔案格式錯誤，請使用 .glb 模型'
+			modelStore.error = '檔案格式錯誤,請使用 .glb 模型'
 			return
 		}
 
@@ -85,18 +104,28 @@
 		{/if}
 	</div>
 
-	<div class="pointer-events-none absolute bottom-0 left-0 top-0 z-10 flex">
-		<Sidebar treeData={modelStore.treeData} onSelect={handleSelect} />
-	</div>
+	{#if !fpsMode}
+		<div class="pointer-events-none absolute bottom-0 left-0 top-0 z-10 flex">
+			<Sidebar treeData={modelStore.treeData} onSelect={handleSelect} />
+		</div>
 
-	<SettingsMenu
-		onGridToggle={(visible) => {
-			viewerRef?.setGridVisible(visible)
-		}}
-		onBoundingBoxToggle={(visible) => {
-			viewerRef?.setBoundingBoxVisible(visible)
-		}}
-	/>
+		<SettingsMenu
+			onGridToggle={(visible) => {
+				viewerRef?.setGridVisible(visible)
+			}}
+			onBoundingBoxToggle={(visible) => {
+				viewerRef?.setBoundingBoxVisible(visible)
+			}}
+		/>
+	{/if}
+
+	{#if showFPSNotification}
+		<div
+			class="pointer-events-none absolute left-1/2 top-8 z-[10000] flex -translate-x-1/2 items-center gap-3 rounded-lg border border-primary/30 bg-primary/10 px-6 py-3 font-semibold text-primary shadow-xl backdrop-blur-sm"
+		>
+			<span>按 ESC 鍵退出 FPS 模式</span>
+		</div>
+	{/if}
 
 	{#if isDragOver}
 		<div

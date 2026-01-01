@@ -9,11 +9,15 @@ interface StorageData {
 	gridVisible: boolean
 	boundingBoxVisible: boolean
 	postProcessing: PostProcessingConfig
+	rayBasedZoom: boolean
+	fpsMode: boolean
 }
 
 export class SettingsStore {
 	_gridVisible = $state(false)
 	_boundingBoxVisible = $state(false)
+	_rayBasedZoom = $state(false)
+	_fpsMode = $state(false)
 	_postProcessing = $state<PostProcessingConfig>({
 		bloomEnabled: true,
 		ssaoEnabled: true,
@@ -23,6 +27,8 @@ export class SettingsStore {
 
 	private _onGridChange: ((visible: boolean) => void) | null = null
 	private _onBoundingBoxChange: ((visible: boolean) => void) | null = null
+	private _onRayBasedZoomChange: ((enabled: boolean) => void) | null = null
+	private _onFPSModeChange: ((enabled: boolean) => void) | null = null
 	private _onPostProcessingChange: ((config: PostProcessingConfig) => void) | null = null
 
 	constructor() {
@@ -70,6 +76,46 @@ export class SettingsStore {
 		this._onBoundingBoxChange = callback
 	}
 
+	// ========== Ray-based Zoom 相關 ==========
+
+	get rayBasedZoom() {
+		return this._rayBasedZoom
+	}
+
+	set rayBasedZoom(value: boolean) {
+		this._rayBasedZoom = value
+		this._onRayBasedZoomChange?.(value)
+		this.saveToLocalStorage()
+	}
+
+	toggleRayBasedZoom() {
+		this.rayBasedZoom = !this._rayBasedZoom
+	}
+
+	onRayBasedZoomChange(callback: (enabled: boolean) => void) {
+		this._onRayBasedZoomChange = callback
+	}
+
+	// ========== FPS Mode 相關 ==========
+
+	get fpsMode() {
+		return this._fpsMode
+	}
+
+	set fpsMode(value: boolean) {
+		this._fpsMode = value
+		this._onFPSModeChange?.(value)
+		this.saveToLocalStorage()
+	}
+
+	toggleFPSMode() {
+		this.fpsMode = !this._fpsMode
+	}
+
+	onFPSModeChange(callback: (enabled: boolean) => void) {
+		this._onFPSModeChange = callback
+	}
+
 	// ========== PostProcessing 相關 ==========
 
 	get postProcessing() {
@@ -112,6 +158,8 @@ export class SettingsStore {
 		const data: StorageData = {
 			gridVisible: this._gridVisible,
 			boundingBoxVisible: this._boundingBoxVisible,
+			rayBasedZoom: this._rayBasedZoom,
+			fpsMode: this._fpsMode,
 			postProcessing: this._postProcessing
 		}
 
@@ -134,6 +182,8 @@ export class SettingsStore {
 			// 加載設置（使用可選鏈確保向後兼容）
 			this._gridVisible = data.gridVisible ?? false
 			this._boundingBoxVisible = data.boundingBoxVisible ?? false
+			this._rayBasedZoom = data.rayBasedZoom ?? false
+			this._fpsMode = data.fpsMode ?? false
 			this._postProcessing = {
 				bloomEnabled: data.postProcessing?.bloomEnabled ?? true,
 				ssaoEnabled: data.postProcessing?.ssaoEnabled ?? true,

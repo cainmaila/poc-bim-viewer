@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { BasePlugin } from '../core/IPlugin'
 import { calculateOptimalDistance, selectViewDirection } from '$lib/utils/cameraUtils'
 import type { CameraAnimationOptions, ViewDirection } from './types'
+import { settingsStore } from '$lib/stores/settings.svelte'
 
 /**
  * CameraPlugin - 相機控制 Plugin
@@ -26,11 +27,30 @@ export class CameraPlugin extends BasePlugin {
 	private readonly CAMERA_PADDING = 0.15
 	private readonly DEFAULT_ANIMATION_DURATION = 1200
 
+	// Ray-based 縮放配置
+	private readonly MIN_DISTANCE_TO_TARGET = 0.5
+	private readonly ZOOM_SPEED = 0.002
+	private raycaster = new THREE.Raycaster()
+	private rayBasedZoomEnabled = true
+
 	// 事件監聽器引用（用於清理）
 	private controlsChangeHandler?: () => void
+	private wheelHandler?: (event: WheelEvent) => void
 
 	protected async onInit(): Promise<void> {
 		console.log('[CameraPlugin] Initialized')
+
+		// 讀取初始設定
+		this.rayBasedZoomEnabled = settingsStore.rayBasedZoom
+
+		// 監聽設定變更
+		settingsStore.onRayBasedZoomChange((enabled) => {
+			this.rayBasedZoomEnabled = enabled
+			console.log(`[CameraPlugin] Ray-based zoom ${enabled ? 'enabled' : 'disabled'}`)
+		})
+
+		// 設定滾輪監聽
+		this.setupWheelListener()
 
 		// 監聽 controls 變化以發送事件
 		this.setupControlsListener()
@@ -259,6 +279,70 @@ export class CameraPlugin extends BasePlugin {
 	}
 
 	/**
+	 * 設定滾輪監聽器
+	 */
+	private setupWheelListener(): void {
+		this.wheelHandler = (event: WheelEvent) => {
+			if (this.rayBasedZoomEnabled) {
+				event.preventDefault()
+				event.stopPropagation()
+				this.handleRayBasedZoom(event)
+			}
+		}
+
+		this.context.canvas.addEventListener('wheel', this.wheelHandler, { passive: false })
+	}
+
+	/**
+	 * 處理 ray-based 滾輪縮放
+	 */
+	private handleRayBasedZoom(event: WheelEvent): void {
+		// 動畫執行中，忽略滾輪
+		if (this.currentAnimation) return
+
+		const canvas = this.context.canvas
+		const camera = this.context.camera
+		const controls = this.context.controls
+
+		// 計算滑鼠在視口中的標準化座標 (NDC)
+		const rect = canvas.getBoundingClientRect()
+		const mouse = new THREE.Vector2(
+			((event.clientX - rect.left) / rect.width) * 2 - 1,
+			-((event.clientY - rect.top) / rect.height) * 2 + 1
+		)
+
+		// 從相機和滑鼠位置建立射線
+		this.raycaster.setFromCamera(mouse, camera)
+
+		// 縮放方向 = 射線方向（已歸一化）
+		const zoomDirection = this.raycaster.ray.direction.clone()
+
+		// 計算縮放量（deltaY 正值 = 向下滾 = 縮小）
+		const delta = event.deltaY * this.ZOOM_SPEED
+
+		// 計算新位置：沿射線反方向移動（-delta）
+		const movement = zoomDirection.multiplyScalar(-delta)
+		const newPosition = camera.position.clone().add(movement)
+
+		// 檢查到 target 的距離
+		const distanceToTarget = newPosition.distanceTo(controls.target)
+
+		// 如果距離太小，拒絕移動（不能穿過 target）
+		if (distanceToTarget < this.MIN_DISTANCE_TO_TARGET) {
+			return
+		}
+
+		// 允許移動
+		camera.position.copy(newPosition)
+
+		// 發送事件通知
+		this.emit('camera:viewChanged', {
+			position: camera.position.clone(),
+			target: controls.target.clone()
+		})
+	}
+
+	/**
 	 * 監聽 OrbitControls 變化
 	 */
 	private setupControlsListener(): void {
@@ -305,6 +389,11 @@ export class CameraPlugin extends BasePlugin {
 		// 移除事件監聽
 		if (this.controlsChangeHandler) {
 			this.context.controls.removeEventListener('change', this.controlsChangeHandler)
+		}
+
+		// 移除滾輪監聽
+		if (this.wheelHandler) {
+			this.context.canvas.removeEventListener('wheel', this.wheelHandler)
 		}
 
 		console.log('[CameraPlugin] Disposed')
