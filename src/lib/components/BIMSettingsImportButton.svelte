@@ -4,6 +4,7 @@
 	import { getActiveModelKey } from '$lib/utils/database'
 	import { Button } from '$lib/components/ui/button'
 	import { Upload } from 'lucide-svelte'
+	import { notify } from '$lib/utils/notify'
 
 	let fileInputRef = $state<HTMLInputElement | null>(null)
 
@@ -17,25 +18,25 @@
 			const currentModelKey = await getActiveModelKey()
 
 			if (!currentModelKey) {
-				alert('請先載入模型')
+				notify.error('請先載入模型')
 				return
 			}
 
 			const result = await bimSettingsStore.importSettings(text, currentModelKey)
 
 			if (result.success) {
-				alert('匯入成功')
+				notify.success('匯入成功')
 				// 重新生成樹狀資料和套用設定
 				if (modelStore.model) {
 					await bimSettingsStore.initForModel(currentModelKey, modelStore.model)
 				}
 				console.log('[BIMSettingsImport] Settings imported successfully')
 			} else {
-				alert(`匯入失敗：${result.error}`)
+				notify.error(`匯入失敗：${result.error}`)
 				console.error('[BIMSettingsImport] Import failed:', result.error)
 			}
 		} catch (error) {
-			alert(`匯入失敗：${error instanceof Error ? error.message : '未知錯誤'}`)
+			notify.error(`匯入失敗：${error instanceof Error ? error.message : '未知錯誤'}`)
 			console.error('[BIMSettingsImport] Import failed:', error)
 		} finally {
 			// Reset input value to allow re-importing the same file

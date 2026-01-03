@@ -2,6 +2,7 @@
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import { Button } from '$lib/components/ui/button'
 	import { Download } from 'lucide-svelte'
+	import { notify } from '$lib/utils/notify'
 
 	function handleExport() {
 		try {
@@ -18,7 +19,7 @@
 			console.log('[BIMSettingsExport] Settings exported successfully')
 		} catch (error) {
 			console.error('[BIMSettingsExport] Export failed:', error)
-			alert(error instanceof Error ? error.message : '匯出失敗')
+			notify.error(error instanceof Error ? error.message : '匯出失敗')
 		}
 	}
 </script>

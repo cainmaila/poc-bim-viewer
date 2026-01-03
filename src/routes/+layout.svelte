@@ -2,6 +2,7 @@
 	import '../app.css'
 	import favicon from '$lib/assets/favicon.svg'
 	import { version } from '$app/environment'
+	import NotificationProvider from '$lib/components/NotificationProvider.svelte'
 
 	let { children } = $props()
 
@@ -16,4 +17,6 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-{@render children()}
+<NotificationProvider>
+	{@render children()}
+</NotificationProvider>
