@@ -134,20 +134,41 @@ export class SettingsStore {
 
 		// 設置新的延遲保存
 		this.saveTimeout = setTimeout(() => {
-			const data: StorageData = {
-				gridVisible: this._gridVisible,
-				boundingBoxVisible: this._boundingBoxVisible,
-				rayBasedZoom: this._rayBasedZoom,
-				fpsMode: this._fpsMode,
-				postProcessing: this._postProcessing
-			}
-
-			try {
-				localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-			} catch (error) {
-				console.error('Failed to save settings to localStorage:', error)
-			}
+			this._doSaveToLocalStorage()
 		}, 500)
+	}
+
+	/**
+	 * 同步保存設置（立即寫入，不延遲）
+	 */
+	flushSettings() {
+		if (this.saveTimeout) {
+			clearTimeout(this.saveTimeout)
+			this.saveTimeout = null
+		}
+		this._doSaveToLocalStorage()
+	}
+
+	/**
+	 * 實際執行 localStorage 寫入
+	 */
+	private _doSaveToLocalStorage() {
+		if (typeof window === 'undefined') return
+
+		const data: StorageData = {
+			gridVisible: this._gridVisible,
+			boundingBoxVisible: this._boundingBoxVisible,
+			rayBasedZoom: this._rayBasedZoom,
+			fpsMode: this._fpsMode,
+			postProcessing: this._postProcessing
+		}
+
+		try {
+			localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+			console.log('[Settings] Saved to localStorage:', data)
+		} catch (error) {
+			console.error('Failed to save settings to localStorage:', error)
+		}
 	}
 
 	private loadFromLocalStorage() {

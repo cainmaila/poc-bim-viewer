@@ -57,7 +57,8 @@
 			pendingSettingChange()
 			pendingSettingChange = null
 		}
-		// 給設定儲存一點時間
+		// 強制刷新設定到 localStorage，然後重新整理
+		settingsStore.flushSettings()
 		setTimeout(() => window.location.reload(), 300)
 	}
 
@@ -68,6 +69,8 @@
 			pendingSettingChange()
 			pendingSettingChange = null
 		}
+		// 強制刷新設定到 localStorage
+		settingsStore.flushSettings()
 		// 設置需要重新整理狀態
 		needsReload = true
 	}
