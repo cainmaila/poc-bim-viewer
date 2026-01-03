@@ -2,7 +2,7 @@
 	import TreeView from './TreeView.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import * as ScrollArea from '$lib/components/ui/scroll-area'
-	import { ChevronLeft, ChevronRight } from 'lucide-svelte'
+	import { ChevronLeft, ChevronRight, Eye } from 'lucide-svelte'
 
 	interface Props {
 		onSelect: (id: string) => void
@@ -13,6 +13,10 @@
 
 	// Use enhanced tree data from BIM settings store
 	const enhancedTreeData = $derived(bimSettingsStore.enhancedTreeData)
+
+	async function handleResetVisibility() {
+		await bimSettingsStore.resetAllVisibility()
+	}
 </script>
 
 <aside
@@ -23,18 +27,32 @@
 	<div class="flex min-h-12 items-center justify-between border-b border-border px-4 py-3">
 		{#if !isCollapsed}
 			<h2 class="m-0 text-base font-semibold text-foreground">模型結構</h2>
-		{/if}
-		<button
-			class="flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/10"
-			onclick={() => (isCollapsed = !isCollapsed)}
-			aria-label="Toggle Sidebar"
-		>
-			{#if isCollapsed}
+			<div class="flex items-center gap-1">
+				<button
+					class="flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/10"
+					onclick={handleResetVisibility}
+					aria-label="重置全部顯示"
+					title="重置全部顯示"
+				>
+					<Eye size={16} />
+				</button>
+				<button
+					class="flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/10"
+					onclick={() => (isCollapsed = !isCollapsed)}
+					aria-label="Toggle Sidebar"
+				>
+					<ChevronLeft size={18} />
+				</button>
+			</div>
+		{:else}
+			<button
+				class="flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/10"
+				onclick={() => (isCollapsed = !isCollapsed)}
+				aria-label="Toggle Sidebar"
+			>
 				<ChevronRight size={18} />
-			{:else}
-				<ChevronLeft size={18} />
-			{/if}
-		</button>
+			</button>
+		{/if}
 	</div>
 
 	{#if !isCollapsed}

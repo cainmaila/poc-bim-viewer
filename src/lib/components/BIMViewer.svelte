@@ -508,19 +508,22 @@
 		const model = scene.children.find((child) => child.userData.isModel)
 		if (!model) return
 
+		// 確保追蹤 nodeOverrides 和 updatedAt 的變化
+		const overrides = settings.nodeOverrides
+		const timestamp = settings.updatedAt
+
 		// 遍歷所有節點套用可見性覆寫
 		model.traverse((child) => {
 			const path = bimSettingsStore.getPathByUUID(child.uuid)
 			if (!path) return
 
-			const override = settings.nodeOverrides[path]
-			if (override?.visible !== undefined) {
-				child.visible = override.visible
-			}
+			const override = overrides[path]
+			// 如果有覆寫則使用覆寫值，否則預設為可見
+			child.visible = override?.visible ?? true
 		})
 
 		requestRender() // 可見性變化時請求渲染
-		console.log('[BIMViewer] Applied visibility overrides from BIM settings')
+		console.log(`[BIMViewer] Applied visibility overrides (updated: ${timestamp})`)
 	})
 
 	// 移除：不再需要監聽設置變化（切換效果會自動重新整理頁面）
