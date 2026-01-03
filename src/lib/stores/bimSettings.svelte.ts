@@ -211,21 +211,25 @@ class BIMSettingsStore {
 
 			const importedData = validation.data!
 
-			// Check model key match
-			if (importedData.modelKey !== currentModelKey) {
-				return {
-					success: false,
-					error: `Model key mismatch: expected "${currentModelKey}", got "${importedData.modelKey}"`
-				}
-			}
-
-			// Completely replace settings
+			// Completely replace settings (允許跨模型匯入)
 			this._settings = importedData.settings
+
+			// 更新為當前模型的 key 和時間戳
+			this._settings.modelKey = currentModelKey
+			this._settings.updatedAt = new Date().toISOString()
 
 			// Save to IndexedDB (convert to plain object using $state.snapshot)
 			await saveBIMSettings(currentModelKey, $state.snapshot(this._settings))
 
-			console.log(`[BIMSettings] Imported settings for model: ${currentModelKey}`)
+			// 重新生成 tree data（會自動過濾不存在的 path）
+			if (this._sceneRoot) {
+				this._updateEnhancedTreeData(this._sceneRoot)
+			}
+
+			console.log(
+				`[BIMSettings] Imported settings from "${importedData.modelKey}" to "${currentModelKey}". ` +
+					`Unmapped paths will be automatically skipped.`
+			)
 			return { success: true }
 		} catch (e) {
 			return {
