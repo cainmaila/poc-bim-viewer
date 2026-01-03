@@ -3,6 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg'
 	import { version } from '$app/environment'
 	import NotificationProvider from '$lib/components/NotificationProvider.svelte'
+	import { Tooltip } from 'bits-ui'
 
 	let { children } = $props()
 
@@ -17,6 +18,8 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<NotificationProvider>
-	{@render children()}
-</NotificationProvider>
+<Tooltip.Provider>
+	<NotificationProvider>
+		{@render children()}
+	</NotificationProvider>
+</Tooltip.Provider>
