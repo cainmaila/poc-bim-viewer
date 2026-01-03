@@ -31,6 +31,15 @@
 	// 容器引用
 	let containerRef = $state<HTMLDivElement | null>(null)
 
+	// 按需渲染狀態
+	let renderRequested = false
+	let continuousRenderActive = false
+
+	// 性能監控（僅在開發環境啟用）
+	let renderCount = 0
+	let lastFPSLog = performance.now()
+	const FPS_LOG_INTERVAL = 5000 // 每 5 秒記錄一次統計
+
 	// 使用 $derived 隔離 model 依賴，避免 store 其他屬性變化時觸發重新渲染
 	const currentModel = $derived(modelStore.model)
 
@@ -57,6 +66,54 @@
 		['KeyS', false],
 		['KeyD', false]
 	])
+
+	/**
+	 * 請求單次渲染（按需渲染）
+	 * 如果已請求或正在持續渲染，則不重複請求
+	 */
+	function requestRender() {
+		if (!renderRequested && !continuousRenderActive) {
+			renderRequested = true
+		}
+	}
+
+	/**
+	 * 檢查是否需要持續渲染
+	 * @returns true 如果需要持續渲染（動畫、交互等）
+	 */
+	function checkNeedsContinuousRender(): boolean {
+		// 1. 檢查 OrbitControls 交互（滑鼠拖曳、縮放等）
+		if (continuousRenderActive) return true
+
+		// 2. 檢查 autoRotate
+		if (controls?.autoRotate) return true
+
+		// 3. 檢查 WASD 移動
+		if (
+			keysPressed.get('KeyW') ||
+			keysPressed.get('KeyA') ||
+			keysPressed.get('KeyS') ||
+			keysPressed.get('KeyD')
+		) {
+			return true
+		}
+
+		// 4. 檢查 FPS 模式
+		const fpsPlugin = pluginManager?.getPlugin<FPSControlsPlugin>('fpsControls')
+		if (fpsPlugin?.isEnabled()) return true
+
+		// 5. 檢查 CameraPlugin 動畫
+		// 注：CameraPlugin.currentAnimation 是私有的，暫無公開 API 檢查動畫狀態
+		// 未來可考慮在 CameraPlugin 中新增 isAnimating() 方法
+		const cameraPlugin = pluginManager?.getPlugin<CameraPlugin>('camera')
+		if (
+			cameraPlugin &&
+			(cameraPlugin as CameraPlugin & { currentAnimation: unknown }).currentAnimation
+		)
+			return true
+
+		return false
+	}
 
 	// 初始化Three.js場景
 	function initScene() {
@@ -95,6 +152,16 @@
 		controls.autoRotate = autoRotate
 		controls.autoRotateSpeed = 0.5
 		controls.maxPolarAngle = Math.PI / 2
+
+		// 監聽 OrbitControls 事件以實現按需渲染
+		controls.addEventListener('change', requestRender)
+		controls.addEventListener('start', () => {
+			continuousRenderActive = true
+		})
+		controls.addEventListener('end', () => {
+			continuousRenderActive = false
+			requestRender() // 最後渲染一次確保最終狀態
+		})
 
 		// 添加燈光
 		setupLights()
@@ -135,6 +202,7 @@
 		viewerControlStore.registerGridVisibleCallback((visible: boolean) => {
 			if (gridHelper) {
 				gridHelper.visible = visible
+				requestRender() // 網格可見性變化時請求渲染
 				console.log('[BIMViewer] Grid visibility set via control:', visible)
 			}
 		})
@@ -142,6 +210,7 @@
 		viewerControlStore.registerBoundingBoxVisibleCallback((visible: boolean) => {
 			boundingBoxEnabled = visible
 			updateBoundingBox()
+			requestRender() // 邊界盒可見性變化時請求渲染
 			console.log('[BIMViewer] Bounding box visibility set via control:', visible)
 		})
 	}
@@ -276,7 +345,7 @@
 		}
 	}
 
-	// 動畫循環 - 使用 frame skipping 優化非視覺更新頻率
+	// 智能渲染循環 - 按需渲染以降低耗電
 	let lastTime = performance.now()
 	let frameCount = 0
 	function animate() {
@@ -288,8 +357,26 @@
 		lastTime = currentTime
 		frameCount++
 
-		// 更新 WASD 平移（每幀執行，保持流暢響應）
-		updatePanMovement()
+		// 檢查是否需要持續渲染（動畫、WASD、FPS 等）
+		const needsContinuousRender = checkNeedsContinuousRender()
+
+		// 如果不需要渲染且沒有請求，則跳過本幀
+		if (!needsContinuousRender && !renderRequested) {
+			return
+		}
+
+		// 清除單次渲染請求標記
+		renderRequested = false
+
+		// 更新 WASD 平移（僅在有按鍵時執行）
+		if (
+			keysPressed.get('KeyW') ||
+			keysPressed.get('KeyA') ||
+			keysPressed.get('KeyS') ||
+			keysPressed.get('KeyD')
+		) {
+			updatePanMovement()
+		}
 
 		// 更新控制項（30fps - 每 2 幀執行一次，減少計算開銷）
 		// FPS 模式時跳過，讓 PointerLockControls 控制相機
@@ -303,11 +390,22 @@
 			pluginManager.update(deltaTime)
 		}
 
-		// 渲染場景（每幀執行，保持 60fps 視覺流暢度）
+		// 渲染場景
 		if (postProcessingManager) {
 			postProcessingManager.render()
 		} else {
 			renderer.render(scene, camera)
+		}
+
+		// 性能監控（開發環境）
+		renderCount++
+		if (currentTime - lastFPSLog > FPS_LOG_INTERVAL) {
+			const avgFPS = renderCount / ((currentTime - lastFPSLog) / 1000)
+			console.log(
+				`[BIMViewer] Render Performance: ${avgFPS.toFixed(1)} FPS (${renderCount} renders in ${((currentTime - lastFPSLog) / 1000).toFixed(1)}s)`
+			)
+			renderCount = 0
+			lastFPSLog = currentTime
 		}
 	}
 
@@ -399,6 +497,8 @@
 		// 初始45度等距視圖
 		resetCameraView()
 
+		requestRender() // 模型載入後請求渲染
+
 		console.log('[BIMViewer] Model added to scene')
 	})
 
@@ -407,6 +507,7 @@
 	function resetCameraView() {
 		const cameraPlugin = pluginManager?.getPlugin<CameraPlugin>('camera')
 		cameraPlugin?.resetCameraView()
+		requestRender() // 相機重置後請求渲染
 	}
 
 	/**
@@ -450,6 +551,11 @@
 		return pluginManager?.getEventBus()
 	}
 
+	/**
+	 * Request a render (exported for external use, e.g., plugins)
+	 */
+	export { requestRender }
+
 	function applyXray(target: THREE.Object3D) {
 		const model = scene.children.find((child) => child.userData.isModel)
 		if (!model) return
@@ -468,6 +574,7 @@
 				}
 			}
 		})
+		requestRender() // X射線效果變化時請求渲染
 	}
 
 	export function resetXray() {
@@ -488,6 +595,8 @@
 		if (postProcessingManager) {
 			postProcessingManager.clearOutlineObjects()
 		}
+
+		requestRender() // 重置 X射線時請求渲染
 	}
 
 	/**
@@ -514,6 +623,7 @@
 				boundingBoxHelper.visible = false
 			}
 		}
+		requestRender() // 邊界盒狀態變化時請求渲染
 	}
 
 	function isDescendant(parent: THREE.Object3D, child: THREE.Object3D): boolean {
