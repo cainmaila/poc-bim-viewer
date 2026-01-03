@@ -4,6 +4,7 @@
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { Button } from '$lib/components/ui/button'
 	import * as Popover from '$lib/components/ui/popover'
+	import * as AlertDialog from '$lib/components/ui/alert-dialog'
 	import { Switch } from '$lib/components/ui/switch'
 	import { Separator } from '$lib/components/ui/separator'
 	import BIMSettingsExportButton from './BIMSettingsExportButton.svelte'
@@ -368,47 +369,36 @@
 </div>
 
 <!-- 重新整理確認對話框 -->
-{#if showReloadDialog}
-	<div
-		class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm"
-		role="dialog"
-		aria-modal="true"
-		aria-labelledby="reload-dialog-title"
-	>
-		<div class="mx-4 w-full max-w-md rounded-xl border border-border/50 bg-card p-6 shadow-2xl">
-			<div class="mb-4 flex items-center gap-3">
-				<div
-					class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/20"
-				>
-					<Info size={20} class="text-blue-400" />
-				</div>
-				<h3 id="reload-dialog-title" class="text-lg font-semibold text-foreground">
-					需要重新整理頁面
-				</h3>
+<AlertDialog.Root bind:open={showReloadDialog}>
+	<AlertDialog.Content class="mx-4 w-full max-w-md">
+		<AlertDialog.Header class="mb-4 flex items-center gap-3">
+			<div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/20">
+				<Info size={20} class="text-blue-400" />
 			</div>
-			<p class="mb-6 pl-[52px] text-sm leading-relaxed text-muted-foreground">
-				此設定變更需要重新整理頁面才能生效。確定要立即重新整理嗎？
-			</p>
-			<div class="flex gap-3">
-				<button
-					class="flex-1 rounded-lg border border-border/50 bg-muted/50 px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-					onclick={() => {
-						showReloadDialog = false
-						handleReloadCancel()
-					}}
-				>
-					稍後再說
-				</button>
-				<button
-					class="flex-1 rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-blue-600 hover:shadow-md"
-					onclick={() => {
-						showReloadDialog = false
-						handleReloadConfirm()
-					}}
-				>
-					立即重新整理
-				</button>
-			</div>
-		</div>
-	</div>
-{/if}
+			<AlertDialog.Title>需要重新整理頁面</AlertDialog.Title>
+		</AlertDialog.Header>
+		<AlertDialog.Description class="pl-[52px]">
+			此設定變更需要重新整理頁面才能生效。確定要立即重新整理嗎？
+		</AlertDialog.Description>
+		<AlertDialog.Footer class="flex gap-3">
+			<AlertDialog.Cancel
+				class="flex-1"
+				onclick={() => {
+					showReloadDialog = false
+					handleReloadCancel()
+				}}
+			>
+				稍後再說
+			</AlertDialog.Cancel>
+			<AlertDialog.Action
+				class="flex-1 bg-blue-500 hover:bg-blue-600"
+				onclick={() => {
+					showReloadDialog = false
+					handleReloadConfirm()
+				}}
+			>
+				立即重新整理
+			</AlertDialog.Action>
+		</AlertDialog.Footer>
+	</AlertDialog.Content>
+</AlertDialog.Root>
