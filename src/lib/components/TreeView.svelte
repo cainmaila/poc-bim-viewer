@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { SvelteSet } from 'svelte/reactivity'
-	import type { TreeItem } from '$lib/stores/modelCache.svelte'
+	import type { EnhancedTreeItem } from '$lib/types/bimSettings'
 	import * as Collapsible from '$lib/components/ui/collapsible'
 	import TreeView from './TreeView.svelte' // Self-import instead of deprecated svelte:self
-	import { FolderOpen, Box, Circle, ChevronRight } from 'lucide-svelte'
+	import { FolderOpen, Box, Circle, ChevronRight, Pencil } from 'lucide-svelte'
 
 	interface Props {
-		items: TreeItem[]
+		items: EnhancedTreeItem[]
 		onSelect: (id: string) => void
 		level?: number
 	}
@@ -30,6 +30,7 @@
 			<Collapsible.Root open={expandedIds.has(item.id)}>
 				<div
 					class="flex cursor-pointer items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap rounded px-2 py-1 text-[13px] text-foreground hover:bg-accent/20"
+					class:opacity-50={!item.visible}
 					onclick={() => onSelect(item.id)}
 					role="button"
 					tabindex="0"
@@ -57,7 +58,13 @@
 						{/if}
 					</span>
 
-					<span class="flex-1 overflow-hidden text-ellipsis">{item.name}</span>
+					<span class="flex-1 overflow-hidden text-ellipsis">{item.displayName}</span>
+
+					{#if item.hasOverrides}
+						<span class="shrink-0 text-xs text-accent" title="已自訂屬性">
+							<Pencil size={12} />
+						</span>
+					{/if}
 				</div>
 
 				{#if item.children.length > 0}

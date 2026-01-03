@@ -6,6 +6,8 @@
 	import * as Popover from '$lib/components/ui/popover'
 	import { Switch } from '$lib/components/ui/switch'
 	import { Separator } from '$lib/components/ui/separator'
+	import BIMSettingsExportButton from './BIMSettingsExportButton.svelte'
+	import BIMSettingsImportButton from './BIMSettingsImportButton.svelte'
 	import {
 		Settings,
 		Trash2,
@@ -344,6 +346,11 @@
 
 				<Separator />
 				<h3 class="text-sm font-semibold">模型管理</h3>
+
+				<div class="flex gap-2">
+					<BIMSettingsExportButton />
+					<BIMSettingsImportButton />
+				</div>
 
 				<Button
 					variant="destructive"

@@ -275,6 +275,13 @@ export class CameraPlugin extends BasePlugin {
 	}
 
 	/**
+	 * 檢查是否有動畫正在執行
+	 */
+	isAnimating(): boolean {
+		return this.currentAnimation !== null
+	}
+
+	/**
 	 * 取消當前動畫
 	 */
 	cancelAnimation(): void {

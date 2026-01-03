@@ -7,7 +7,7 @@
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { settingsStore } from '$lib/stores/settings.svelte'
 	import { onMount } from 'svelte'
-	import { getActiveModelKey, getModelFromCache } from '$lib/utils/indexedDBCache'
+	import { getActiveModelKey, getModelFromCache } from '$lib/utils/database'
 	import { Box, TriangleAlert, RefreshCw } from 'lucide-svelte'
 
 	let isDragOver = $state(false)
@@ -114,7 +114,7 @@
 
 	{#if !settingsStore.fpsMode}
 		<div class="pointer-events-none absolute bottom-0 left-0 top-0 z-10 flex">
-			<Sidebar treeData={modelStore.treeData} onSelect={handleSelect} />
+			<Sidebar onSelect={handleSelect} />
 		</div>
 
 		<SettingsMenu bind:needsReload />

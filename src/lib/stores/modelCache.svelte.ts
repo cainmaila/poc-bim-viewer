@@ -4,8 +4,10 @@ import {
 	setActiveModelKey,
 	saveModelToCache,
 	getModelFromCache,
-	clearCache
-} from '../utils/indexedDBCache'
+	clearCache,
+	getActiveModelKey
+} from '../utils/database'
+import { bimSettingsStore } from './bimSettings.svelte'
 
 /**
  * Tree item structure for sidebar navigation
@@ -84,6 +86,11 @@ class ModelCacheStore {
 			// Generate tree data
 			this._treeData = this.generateTreeData(this._model!)
 
+			// Initialize BIM settings
+			if (this._model) {
+				await bimSettingsStore.initForModel(cacheKey, this._model)
+			}
+
 			console.log(
 				`[ModelCache] Model loaded successfully (from ${result.fromCache ? 'cache' : 'network'})`
 			)
@@ -121,6 +128,11 @@ class ModelCacheStore {
 
 			// Generate tree data
 			this._treeData = this.generateTreeData(this._model!)
+
+			// Initialize BIM settings
+			if (this._model) {
+				await bimSettingsStore.initForModel(file.name, this._model)
+			}
 
 			console.log(`[ModelCache] Model loaded from file and cached: ${file.name}`)
 		} catch (e) {
@@ -164,6 +176,11 @@ class ModelCacheStore {
 			// Generate tree data
 			this._treeData = this.generateTreeData(this._model!)
 
+			// Initialize BIM settings
+			if (this._model) {
+				await bimSettingsStore.initForModel(cacheKey, this._model)
+			}
+
 			console.log(`[ModelCache] Model loaded from cache: ${cacheKey}`)
 		} catch (e) {
 			const errorMessage = e instanceof Error ? e.message : '從緩存載入模型失敗'
@@ -197,6 +214,9 @@ class ModelCacheStore {
 		this._error = null
 		this._fromCache = false
 		this._treeData = []
+
+		// Clear BIM settings
+		bimSettingsStore.clear()
 
 		console.log('[ModelCache] Model cleared')
 	}
@@ -233,8 +253,17 @@ class ModelCacheStore {
 	 * Unload the current model, clear cache, and reload the page
 	 */
 	async unloadModel(): Promise<void> {
+		// Get active model key before clearing
+		const activeKey = await getActiveModelKey()
+
 		this.clearModel()
 		await clearCache()
+
+		// Delete corresponding BIM settings
+		if (activeKey) {
+			await bimSettingsStore.deleteSettings(activeKey)
+		}
+
 		console.log('[ModelCache] Model unloaded and cache cleared')
 		// Reload the page after a short delay
 		setTimeout(() => {

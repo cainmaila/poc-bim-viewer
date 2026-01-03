@@ -2,6 +2,7 @@
 	import * as THREE from 'three'
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
+	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import { PostProcessingManager } from '$lib/utils/postProcessingManager'
 	import { settingsStore } from '$lib/stores/settings.svelte'
 	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
@@ -103,14 +104,8 @@
 		if (fpsPlugin?.isEnabled()) return true
 
 		// 5. 檢查 CameraPlugin 動畫
-		// 注：CameraPlugin.currentAnimation 是私有的，暫無公開 API 檢查動畫狀態
-		// 未來可考慮在 CameraPlugin 中新增 isAnimating() 方法
 		const cameraPlugin = pluginManager?.getPlugin<CameraPlugin>('camera')
-		if (
-			cameraPlugin &&
-			(cameraPlugin as CameraPlugin & { currentAnimation: unknown }).currentAnimation
-		)
-			return true
+		if (cameraPlugin?.isAnimating()) return true
 
 		return false
 	}
@@ -259,6 +254,9 @@
 		if (postProcessingManager) {
 			postProcessingManager.handleResize(width, height)
 		}
+
+		// 調整大小後請求重新渲染
+		requestRender()
 	}
 
 	// 使用 requestAnimationFrame 節流 resize 處理
@@ -500,6 +498,29 @@
 		requestRender() // 模型載入後請求渲染
 
 		console.log('[BIMViewer] Model added to scene')
+	})
+
+	// 效果：監聽 BIM 設定變化並套用可見性覆寫
+	$effect(() => {
+		const settings = bimSettingsStore.settings
+		if (!settings || !scene) return
+
+		const model = scene.children.find((child) => child.userData.isModel)
+		if (!model) return
+
+		// 遍歷所有節點套用可見性覆寫
+		model.traverse((child) => {
+			const path = bimSettingsStore.getPathByUUID(child.uuid)
+			if (!path) return
+
+			const override = settings.nodeOverrides[path]
+			if (override?.visible !== undefined) {
+				child.visible = override.visible
+			}
+		})
+
+		requestRender() // 可見性變化時請求渲染
+		console.log('[BIMViewer] Applied visibility overrides from BIM settings')
 	})
 
 	// 移除：不再需要監聽設置變化（切換效果會自動重新整理頁面）

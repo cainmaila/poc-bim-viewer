@@ -1,16 +1,18 @@
 <script lang="ts">
 	import TreeView from './TreeView.svelte'
-	import type { TreeItem } from '$lib/stores/modelCache.svelte'
+	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import * as ScrollArea from '$lib/components/ui/scroll-area'
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte'
 
 	interface Props {
-		treeData: TreeItem[]
 		onSelect: (id: string) => void
 	}
 
-	let { treeData, onSelect }: Props = $props()
+	let { onSelect }: Props = $props()
 	let isCollapsed = $state(false)
+
+	// Use enhanced tree data from BIM settings store
+	const enhancedTreeData = $derived(bimSettingsStore.enhancedTreeData)
 </script>
 
 <aside
@@ -38,8 +40,8 @@
 	{#if !isCollapsed}
 		<ScrollArea.Root class="flex-1">
 			<div class="p-2">
-				{#if treeData.length > 0}
-					<TreeView items={treeData} {onSelect} />
+				{#if enhancedTreeData.length > 0}
+					<TreeView items={enhancedTreeData} {onSelect} />
 				{:else}
 					<div class="p-5 text-center text-sm text-muted-foreground">尚無模型資料</div>
 				{/if}

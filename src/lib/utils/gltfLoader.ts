@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { getModelFromCache, saveModelToCache } from './indexedDBCache'
+import { getModelFromCache, saveModelToCache } from './database'
 
 /**
  * 載入 GLB 模型的結果
@@ -54,7 +54,7 @@ export async function loadGLBModel(
 
 		// 步驟3：保存到快取（異步，不等待）
 		onProgress?.(70)
-		saveModelToCache(cacheKey, arrayBuffer).catch((error) => {
+		saveModelToCache(cacheKey, arrayBuffer).catch((error: unknown) => {
 			console.warn('[GLBLoader] Failed to cache model:', error)
 		})
 
