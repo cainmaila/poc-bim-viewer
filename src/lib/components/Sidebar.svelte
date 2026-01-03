@@ -2,6 +2,7 @@
 	import TreeView from './TreeView.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import * as ScrollArea from '$lib/components/ui/scroll-area'
+	import { Button } from '$lib/components/ui/button'
 	import { ChevronLeft, ChevronRight, Eye } from 'lucide-svelte'
 
 	interface Props {
@@ -28,30 +29,36 @@
 		{#if !isCollapsed}
 			<h2 class="m-0 text-base font-semibold text-foreground">模型結構</h2>
 			<div class="flex items-center gap-1">
-				<button
-					class="flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/10"
+				<Button
+					variant="ghost"
+					size="icon"
+					class="h-8 w-8"
 					onclick={handleResetVisibility}
 					aria-label="重置全部顯示"
 					title="重置全部顯示"
 				>
 					<Eye size={16} />
-				</button>
-				<button
-					class="flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/10"
+				</Button>
+				<Button
+					variant="ghost"
+					size="icon"
+					class="h-8 w-8"
 					onclick={() => (isCollapsed = !isCollapsed)}
 					aria-label="Toggle Sidebar"
 				>
 					<ChevronLeft size={18} />
-				</button>
+				</Button>
 			</div>
 		{:else}
-			<button
-				class="flex items-center justify-center rounded p-1 transition-colors hover:bg-accent/10"
+			<Button
+				variant="ghost"
+				size="icon"
+				class="h-8 w-8"
 				onclick={() => (isCollapsed = !isCollapsed)}
 				aria-label="Toggle Sidebar"
 			>
 				<ChevronRight size={18} />
-			</button>
+			</Button>
 		{/if}
 	</div>
 

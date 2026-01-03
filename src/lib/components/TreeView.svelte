@@ -3,6 +3,7 @@
 	import type { EnhancedTreeItem } from '$lib/types/bimSettings'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import * as Collapsible from '$lib/components/ui/collapsible'
+	import { Button } from '$lib/components/ui/button'
 	import TreeView from './TreeView.svelte' // Self-import instead of deprecated svelte:self
 	import { FolderOpen, Box, Circle, ChevronRight, Pencil, Eye, EyeOff } from 'lucide-svelte'
 
@@ -44,15 +45,18 @@
 					onkeydown={(e) => e.key === 'Enter' && onSelect(item.id)}
 				>
 					{#if item.children.length > 0}
-						<button
-							class="flex w-3 shrink-0 items-center justify-center border-none bg-transparent p-0 text-muted-foreground transition-transform duration-200"
-							class:rotate-90={expandedIds.has(item.id)}
+						<Button
+							variant="ghost"
+							size="icon"
+							class="h-6 w-6 shrink-0 transition-transform duration-200 {expandedIds.has(item.id)
+								? 'rotate-90'
+								: ''}"
 							onclick={(e) => toggleExpand(item.id, e)}
 						>
 							<ChevronRight size={12} />
-						</button>
+						</Button>
 					{:else}
-						<span class="w-3 shrink-0"></span>
+						<span class="w-6 shrink-0"></span>
 					{/if}
 
 					<span class="shrink-0">
@@ -74,10 +78,10 @@
 					{/if}
 
 					<!-- 可見性切換按鈕 -->
-					<button
-						class="shrink-0 border-none bg-transparent p-0 text-muted-foreground transition-colors hover:text-foreground"
-						class:text-foreground={item.visible}
-						class:text-muted-foreground={!item.visible}
+					<Button
+						variant="ghost"
+						size="icon"
+						class="h-6 w-6 shrink-0 {item.visible ? 'text-foreground' : 'text-muted-foreground'}"
 						onclick={(e) => toggleVisibility(item, e)}
 						title={item.visible ? '點擊隱藏' : '點擊顯示'}
 					>
@@ -86,7 +90,7 @@
 						{:else}
 							<EyeOff size={14} />
 						{/if}
-					</button>
+					</Button>
 				</div>
 
 				{#if item.children.length > 0 && item.visible}
