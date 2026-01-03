@@ -8,12 +8,21 @@ interface ViewerControlInterface {
 	setGridVisible(visible: boolean): void
 	setBoundingBoxVisible(visible: boolean): void
 	syncInitialState(): void
+	setSelectedNode(nodeId: string | null): void
+	getSelectedNode(): string | null
+	clearSelectedNode(): void
 }
 
 class ViewerControlStore implements ViewerControlInterface {
 	private gridVisibleCallback: ((visible: boolean) => void) | null = null
 	private boundingBoxVisibleCallback: ((visible: boolean) => void) | null = null
 	private initialStateSynced = false
+
+	/**
+	 * 當前選中的節點 ID（響應式狀態）
+	 * 用於 TreeView 等 UI 組件顯示選中效果
+	 */
+	selectedNodeId = $state<string | null>(null)
 
 	/**
 	 * 註冊網格可見性控制回調
@@ -58,10 +67,32 @@ class ViewerControlStore implements ViewerControlInterface {
 	}
 
 	/**
+	 * 設置選中的節點 ID
+	 */
+	setSelectedNode(nodeId: string | null): void {
+		this.selectedNodeId = nodeId
+	}
+
+	/**
+	 * 獲取當前選中的節點 ID
+	 */
+	getSelectedNode(): string | null {
+		return this.selectedNodeId
+	}
+
+	/**
+	 * 清除選中的節點
+	 */
+	clearSelectedNode(): void {
+		this.selectedNodeId = null
+	}
+
+	/**
 	 * 重置狀態（用於場景重新初始化時）
 	 */
 	reset(): void {
 		this.initialStateSynced = false
+		this.selectedNodeId = null
 	}
 }
 
