@@ -28,6 +28,7 @@
 ## Implementation Notes
 
 - Treat internal submodules as read-only (e.g. shared component libraries, three.js core, utility packages); prefer extending them via composition rather than editing their source.
+- When handling Three.js-related tasks (rendering, materials, loaders, performance, post-processing, shaders, animation), consult `.github/copilot-threejs-expert.yml` and follow the referenced prompt files under `prompts/` as the domain-specific guidance.
 - New runtime config should be plumbed via JSON in `static/` plus matching `PUBLIC_*` keys, preserving the runtime-loaded pattern.
 - Do not create `+page.server.ts`, `+layout.server.ts` or `+server.ts` endpoints; all logic must be browser-side or via external HTTP APIs compatible with static hosting.
 - When constructing internal links or static asset URLs, always account for `PUBLIC_BASE_PATH` (or SvelteKit `$app/paths.base`) instead of hard-coding root-based paths like `/foo`.

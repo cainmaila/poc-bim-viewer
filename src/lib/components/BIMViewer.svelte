@@ -4,6 +4,7 @@
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { PostProcessingManager } from '$lib/utils/postProcessingManager'
 	import { settingsStore } from '$lib/stores/settings.svelte'
+	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import { PluginManager, CameraPlugin, FPSControlsPlugin } from '$lib/plugins'
 
 	interface Props {
@@ -30,7 +31,25 @@
 	// 容器引用
 	let containerRef = $state<HTMLDivElement | null>(null)
 
-	// WASD 鍵盤平移控制（使用鍵盤碼，不受大小寫影響）
+	// 使用 $derived 隔離 model 依賴，避免 store 其他屬性變化時觸發重新渲染
+	const currentModel = $derived(modelStore.model)
+
+	/**
+	 * WASD 鍵盤狀態追蹤
+	 *
+	 * @non-reactive - 刻意設計為非響應式以達到最佳性能
+	 *
+	 * 原因：
+	 * 1. 每秒更新 60 次（在 animate loop 中讀取）
+	 * 2. 如果設為響應式，每次按鍵都會觸發 Svelte 的 reactivity system
+	 * 3. 這會造成不必要的重新渲染和性能開銷
+	 *
+	 * 限制：
+	 * - 如果未來需要在 UI 中顯示按鍵狀態，需重構為響應式
+	 * - 目前僅用於內部計算，無需響應式追蹤
+	 *
+	 * 使用鍵盤碼（KeyW/KeyA/KeyS/KeyD）而非字符，不受大小寫和鍵盤佈局影響
+	 */
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
 	let keysPressed = new Map<string, boolean>([
 		['KeyW', false],
@@ -80,9 +99,10 @@
 		// 添加燈光
 		setupLights()
 
-		// 添加網格助手（預設隱藏，避免響應式追蹤）
-		gridHelper = new THREE.GridHelper(100, 100, 0x3f3f46, 0x2a2a2e) // 暗色網格
-		gridHelper.visible = false // 預設隱藏，由 setGridVisible 控制
+		// 添加網格助手（預設隱藏，由 $effect 控制可見性）
+		gridHelper = new THREE.GridHelper(200, 20, 0x4a4a5e, 0x2a2a3e) // 增加尺寸和對比度
+		gridHelper.visible = false // 預設隱藏，由 $effect 根據 settingsStore 控制
+		gridHelper.position.y = 0 // 確保網格在地面上
 		scene.add(gridHelper)
 
 		// 添加軸助手（可選，用於調試）
@@ -109,6 +129,20 @@
 		// 初始化所有 Plugin
 		pluginManager.init().then(() => {
 			console.log('[BIMViewer] PluginManager initialized')
+		})
+
+		// 註冊控制回調
+		viewerControlStore.registerGridVisibleCallback((visible: boolean) => {
+			if (gridHelper) {
+				gridHelper.visible = visible
+				console.log('[BIMViewer] Grid visibility set via control:', visible)
+			}
+		})
+
+		viewerControlStore.registerBoundingBoxVisibleCallback((visible: boolean) => {
+			boundingBoxEnabled = visible
+			updateBoundingBox()
+			console.log('[BIMViewer] Bounding box visibility set via control:', visible)
 		})
 	}
 
@@ -185,6 +219,11 @@
 		}
 	})
 
+	// 註冊 onMount 效果
+	$effect(() => {
+		if (!canvasRef) return
+	})
+
 	// WASD 鍵盤事件處理
 	function handleKeyDown(e: KeyboardEvent) {
 		if (['KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(e.code)) {
@@ -237,8 +276,9 @@
 		}
 	}
 
-	// 動畫循環
+	// 動畫循環 - 使用 frame skipping 優化非視覺更新頻率
 	let lastTime = performance.now()
+	let frameCount = 0
 	function animate() {
 		animationFrameId = requestAnimationFrame(animate)
 
@@ -246,22 +286,24 @@
 		const currentTime = performance.now()
 		const deltaTime = (currentTime - lastTime) / 1000 // 轉換為秒
 		lastTime = currentTime
+		frameCount++
 
-		// 更新 WASD 平移
+		// 更新 WASD 平移（每幀執行，保持流暢響應）
 		updatePanMovement()
 
-		// 更新控制項（FPS 模式時跳過，讓 PointerLockControls 控制相機）
+		// 更新控制項（30fps - 每 2 幀執行一次，減少計算開銷）
+		// FPS 模式時跳過，讓 PointerLockControls 控制相機
 		const fpsPlugin = pluginManager?.getPlugin<FPSControlsPlugin>('fpsControls')
-		if (!fpsPlugin?.isEnabled()) {
+		if (!fpsPlugin?.isEnabled() && frameCount % 2 === 0) {
 			controls.update()
 		}
 
-		// 更新所有 Plugin
+		// 更新所有 Plugin（每幀執行）
 		if (pluginManager) {
 			pluginManager.update(deltaTime)
 		}
 
-		// 渲染場景（使用後期處理或直接渲染）
+		// 渲染場景（每幀執行，保持 60fps 視覺流暢度）
 		if (postProcessingManager) {
 			postProcessingManager.render()
 		} else {
@@ -311,8 +353,8 @@
 	let renderedModel: THREE.Group | null = null
 
 	// 效果：當模型載入時添加到場景
+	// 使用 $derived 的 currentModel 確保只在 model 真正改變時執行
 	$effect(() => {
-		const currentModel = modelStore.model
 		if (!currentModel || !scene) return
 
 		// 如果是同一個模型，不重複渲染
@@ -446,20 +488,6 @@
 		if (postProcessingManager) {
 			postProcessingManager.clearOutlineObjects()
 		}
-	}
-
-	export function setGridVisible(visible: boolean) {
-		if (gridHelper) {
-			gridHelper.visible = visible
-		}
-	}
-
-	/**
-	 * 切換邊界盒可見性
-	 */
-	export function setBoundingBoxVisible(visible: boolean) {
-		boundingBoxEnabled = visible
-		updateBoundingBox()
 	}
 
 	/**

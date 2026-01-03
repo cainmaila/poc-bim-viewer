@@ -77,15 +77,6 @@ export class FPSControlsPlugin extends BasePlugin {
 		// 讀取初始設定
 		this.fpsEnabled = settingsStore.fpsMode
 
-		// 監聽設定變更
-		settingsStore.onFPSModeChange((enabled) => {
-			if (enabled) {
-				this.enableFPSMode()
-			} else {
-				this.disableFPSMode()
-			}
-		})
-
 		// 監聽動畫事件（動畫執行時暫停 FPS 控制）
 		this.on('camera:moveStart', () => this.pauseFPSControls())
 		this.on('camera:moveEnd', () => this.resumeFPSControls())
@@ -97,6 +88,17 @@ export class FPSControlsPlugin extends BasePlugin {
 	}
 
 	update(deltaTime: number): void {
+		// 同步設置變化（輪詢方式，避免 callback）
+		const currentFPSMode = settingsStore.fpsMode
+		if (currentFPSMode !== this.fpsEnabled) {
+			this.fpsEnabled = currentFPSMode
+			if (currentFPSMode) {
+				this.enableFPSMode()
+			} else {
+				this.disableFPSMode()
+			}
+		}
+
 		if (this.fpsEnabled && !this.controlsPaused && this.pointerLockControls?.isLocked) {
 			this.updateFPSMovement(deltaTime)
 		}

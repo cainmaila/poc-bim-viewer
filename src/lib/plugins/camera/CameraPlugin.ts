@@ -43,12 +43,6 @@ export class CameraPlugin extends BasePlugin {
 		// 讀取初始設定
 		this.rayBasedZoomEnabled = settingsStore.rayBasedZoom
 
-		// 監聽設定變更
-		settingsStore.onRayBasedZoomChange((enabled) => {
-			this.rayBasedZoomEnabled = enabled
-			console.log(`[CameraPlugin] Ray-based zoom ${enabled ? 'enabled' : 'disabled'}`)
-		})
-
 		// 設定滾輪監聽
 		this.setupWheelListener()
 
@@ -258,6 +252,18 @@ export class CameraPlugin extends BasePlugin {
 		this.context.camera.position.copy(center.clone().add(currentDirection.multiplyScalar(distance)))
 		this.context.controls.target.copy(center)
 		this.context.controls.update()
+	}
+
+	/**
+	 * 每幀更新 - 同步設置變化
+	 */
+	update(): void {
+		// 同步設置變化（輪詢方式，避免 callback）
+		const currentRayBasedZoom = settingsStore.rayBasedZoom
+		if (currentRayBasedZoom !== this.rayBasedZoomEnabled) {
+			this.rayBasedZoomEnabled = currentRayBasedZoom
+			console.log(`[CameraPlugin] Ray-based zoom ${currentRayBasedZoom ? 'enabled' : 'disabled'}`)
+		}
 	}
 
 	/**

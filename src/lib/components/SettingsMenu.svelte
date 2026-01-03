@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { settingsStore } from '$lib/stores/settings.svelte'
+	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { Button } from '$lib/components/ui/button'
 	import * as Popover from '$lib/components/ui/popover'
@@ -22,12 +23,10 @@
 	} from 'lucide-svelte'
 
 	interface Props {
-		onGridToggle?: (visible: boolean) => void
-		onBoundingBoxToggle?: (visible: boolean) => void
 		needsReload?: boolean
 	}
 
-	let { onGridToggle, onBoundingBoxToggle, needsReload = $bindable(false) }: Props = $props()
+	let { needsReload = $bindable(false) }: Props = $props()
 
 	// 需要重新整理才生效的設定項目變更追蹤
 	let showReloadDialog = $state(false)
@@ -72,6 +71,16 @@
 		// 設置需要重新整理狀態
 		needsReload = true
 	}
+
+	// 初始化時同步設定狀態到 viewer（只執行一次）
+	$effect(() => {
+		viewerControlStore.syncInitialState()
+		// 使用 queueMicrotask 確保 viewer 的回調已註冊
+		queueMicrotask(() => {
+			viewerControlStore.setGridVisible(settingsStore.gridVisible)
+			viewerControlStore.setBoundingBoxVisible(settingsStore.boundingBoxVisible)
+		})
+	})
 </script>
 
 <div class="absolute right-4 top-4 z-[100] flex gap-2">
@@ -250,9 +259,9 @@
 					<span class="text-sm text-muted-foreground">顯示網格</span>
 					<Switch
 						checked={settingsStore.gridVisible}
-						onCheckedChange={(checked: boolean) => {
+						onCheckedChange={() => {
 							settingsStore.toggleGrid()
-							onGridToggle?.(checked)
+							viewerControlStore.setGridVisible(settingsStore.gridVisible)
 						}}
 					/>
 				</div>
@@ -261,9 +270,9 @@
 					<span class="text-sm text-muted-foreground">顯示選取物件的Bounding Box</span>
 					<Switch
 						checked={settingsStore.boundingBoxVisible}
-						onCheckedChange={(checked: boolean) => {
+						onCheckedChange={() => {
 							settingsStore.toggleBoundingBox()
-							onBoundingBoxToggle?.(checked)
+							viewerControlStore.setBoundingBoxVisible(settingsStore.boundingBoxVisible)
 						}}
 					/>
 				</div>

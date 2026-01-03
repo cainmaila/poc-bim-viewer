@@ -40,7 +40,10 @@
       "mcp__chrome-devtools__navigate_page",
       "mcp__serena__list_dir",
       "Bash(mkdir:*)",
-      "Bash(pnpm dev)"
+      "Bash(pnpm dev)",
+      "Bash(timeout 10 pnpm dev:*)",
+      "mcp__context7__query-docs",
+      "Bash(pnpm install)"
     ]
   }
 }

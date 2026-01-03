@@ -5,41 +5,48 @@
 	import LoadingOverlay from '$lib/components/LoadingOverlay.svelte'
 	import * as Alert from '$lib/components/ui/alert'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
+	import { settingsStore } from '$lib/stores/settings.svelte'
 	import { onMount } from 'svelte'
 	import { getActiveModelKey, getModelFromCache } from '$lib/utils/indexedDBCache'
 	import { Box, TriangleAlert, RefreshCw } from 'lucide-svelte'
 
 	let isDragOver = $state(false)
 	let viewerRef = $state<ReturnType<typeof BIMViewer>>()
-	let fpsMode = $state(false)
 	let showFPSNotification = $state(false)
 	let needsReload = $state(false)
 
 	onMount(async () => {
-		const activeKey = await getActiveModelKey()
-		if (activeKey) {
-			const cachedData = await getModelFromCache(activeKey)
-			if (cachedData) {
-				// 從緩存載入模型
-				await modelStore.loadModelFromCache(activeKey)
-			}
-		}
-
-		// 監聽 FPS 模式變化
-		const eventBus = viewerRef?.getEventBus()
-		if (eventBus) {
-			eventBus.on('fps:modeChanged', (data: { enabled: boolean }) => {
-				fpsMode = data.enabled
-
-				// 進入 FPS 模式時顯示提示
-				if (data.enabled) {
-					showFPSNotification = true
-					// 3 秒後自動隱藏
-					setTimeout(() => {
-						showFPSNotification = false
-					}, 3000)
+		try {
+			const activeKey = await getActiveModelKey()
+			if (activeKey) {
+				const cachedData = await getModelFromCache(activeKey)
+				if (cachedData) {
+					// 從緩存載入模型
+					await modelStore.loadModelFromCache(activeKey)
 				}
-			})
+			}
+
+			// 監聽 FPS 模式變化
+			const eventBus = viewerRef?.getEventBus()
+			if (eventBus) {
+				eventBus.on('fps:modeChanged', (data: { enabled: boolean }) => {
+					// 同步更新 settingsStore（如果 FPS 模式是從其他地方觸發的）
+					settingsStore.fpsMode = data.enabled
+
+					// 進入 FPS 模式時顯示提示
+					if (data.enabled) {
+						showFPSNotification = true
+						// 3 秒後自動隱藏
+						setTimeout(() => {
+							showFPSNotification = false
+						}, 3000)
+					}
+				})
+			}
+		} catch (error) {
+			console.error('[App] Initialization error:', error)
+			modelStore.error =
+				error instanceof Error ? `初始化失敗: ${error.message}` : '初始化失敗，請重新整理頁面'
 		}
 	})
 
@@ -105,20 +112,12 @@
 		{/if}
 	</div>
 
-	{#if !fpsMode}
+	{#if !settingsStore.fpsMode}
 		<div class="pointer-events-none absolute bottom-0 left-0 top-0 z-10 flex">
 			<Sidebar treeData={modelStore.treeData} onSelect={handleSelect} />
 		</div>
 
-		<SettingsMenu
-			bind:needsReload
-			onGridToggle={(visible) => {
-				viewerRef?.setGridVisible(visible)
-			}}
-			onBoundingBoxToggle={(visible) => {
-				viewerRef?.setBoundingBoxVisible(visible)
-			}}
-		/>
+		<SettingsMenu bind:needsReload />
 	{/if}
 
 	{#if showFPSNotification}
