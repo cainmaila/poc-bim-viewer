@@ -18,7 +18,6 @@
 	let renderer: THREE.WebGLRenderer
 	let controls: OrbitControls
 	let animationFrameId: number
-	let resizeObserver: ResizeObserver
 	let gridHelper: THREE.GridHelper
 	let postProcessingManager: PostProcessingManager | null = null
 	let pluginManager: PluginManager
@@ -27,6 +26,9 @@
 	let currentSelectedObject: THREE.Object3D | null = null
 	let boundingBoxHelper: THREE.BoxHelper | null = null
 	let boundingBoxEnabled = $state(false)
+
+	// 容器引用
+	let containerRef = $state<HTMLDivElement | null>(null)
 
 	// WASD 鍵盤平移控制（使用鍵盤碼，不受大小寫影響）
 	// eslint-disable-next-line svelte/prefer-svelte-reactivity
@@ -140,10 +142,10 @@
 
 	// 處理視窗調整大小
 	function handleResize() {
-		if (!canvasRef || !camera || !renderer) return
+		if (!containerRef || !camera || !renderer) return
 
-		const width = canvasRef.clientWidth
-		const height = canvasRef.clientHeight
+		const width = containerRef.clientWidth
+		const height = containerRef.clientHeight
 
 		camera.aspect = width / height
 		camera.updateProjectionMatrix()
@@ -155,6 +157,33 @@
 			postProcessingManager.handleResize(width, height)
 		}
 	}
+
+	// 使用 requestAnimationFrame 節流 resize 處理
+	let resizeScheduled = false
+	function scheduleResize() {
+		if (resizeScheduled) return
+		resizeScheduled = true
+
+		requestAnimationFrame(() => {
+			handleResize()
+			resizeScheduled = false
+		})
+	}
+
+	// 使用 $effect 設置 ResizeObserver
+	$effect(() => {
+		if (!containerRef) return
+
+		const observer = new ResizeObserver(() => {
+			scheduleResize()
+		})
+
+		observer.observe(containerRef)
+
+		return () => {
+			observer.disconnect()
+		}
+	})
 
 	// WASD 鍵盤事件處理
 	function handleKeyDown(e: KeyboardEvent) {
@@ -246,19 +275,12 @@
 			initScene()
 			animate()
 
-			// 設定ResizeObserver
-			resizeObserver = new ResizeObserver(() => {
-				handleResize()
-			})
-			resizeObserver.observe(canvasRef)
-
 			// 添加鍵盤事件監聽器
 			window.addEventListener('keydown', handleKeyDown)
 			window.addEventListener('keyup', handleKeyUp)
 
 			// 清理
 			return () => {
-				resizeObserver?.disconnect()
 				cancelAnimationFrame(animationFrameId)
 				controls?.dispose()
 				renderer?.dispose()
@@ -476,11 +498,13 @@
 	}
 </script>
 
-<canvas
-	bind:this={canvasRef}
-	class="block h-full w-full touch-none"
-	aria-label="3D BIM Model Viewer"
-></canvas>
+<div class="h-full w-full" bind:this={containerRef}>
+	<canvas
+		bind:this={canvasRef}
+		class="block h-full w-full touch-none"
+		aria-label="3D BIM Model Viewer"
+	></canvas>
+</div>
 
 <style lang="postcss">
 	/* 保留 Three.js 必要樣式 */
