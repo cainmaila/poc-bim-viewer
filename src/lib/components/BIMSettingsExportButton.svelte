@@ -16,7 +16,6 @@
 			link.click()
 
 			URL.revokeObjectURL(url)
-			console.log('[BIMSettingsExport] Settings exported successfully')
 		} catch (error) {
 			console.error('[BIMSettingsExport] Export failed:', error)
 			notify.error(error instanceof Error ? error.message : '匯出失敗')

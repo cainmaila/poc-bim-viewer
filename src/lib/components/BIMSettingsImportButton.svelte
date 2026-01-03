@@ -30,14 +30,11 @@
 				if (modelStore.model) {
 					await bimSettingsStore.initForModel(currentModelKey, modelStore.model)
 				}
-				console.log('[BIMSettingsImport] Settings imported successfully')
 			} else {
 				notify.error(`匯入失敗：${result.error}`)
-				console.error('[BIMSettingsImport] Import failed:', result.error)
 			}
 		} catch (error) {
 			notify.error(`匯入失敗：${error instanceof Error ? error.message : '未知錯誤'}`)
-			console.error('[BIMSettingsImport] Import failed:', error)
 		} finally {
 			// Reset input value to allow re-importing the same file
 			input.value = ''

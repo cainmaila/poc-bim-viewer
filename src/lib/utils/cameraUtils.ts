@@ -20,7 +20,6 @@ export function calculateOptimalDistance(
 	// 處理退化案例（零維度）
 	const epsilon = 0.001
 	if (size.x < epsilon || size.y < epsilon || size.z < epsilon) {
-		console.warn('Degenerate object with zero dimension')
 		return 10
 	}
 
@@ -105,7 +104,6 @@ export function selectViewDirection(
 
 	if (projectedWidth < minVisibleSize) {
 		// 當前視角過於側面，改用等距視圖
-		console.log('Edge-on view detected, switching to isometric fallback')
 		return new THREE.Vector3(1, 1, 1).normalize()
 	}
 

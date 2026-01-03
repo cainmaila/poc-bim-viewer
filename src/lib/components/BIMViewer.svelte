@@ -37,7 +37,6 @@
 	let continuousRenderActive = false
 
 	// 性能監控（僅在開發環境啟用）
-	let renderCount = 0
 	let lastFPSLog = performance.now()
 	const FPS_LOG_INTERVAL = 5000 // 每 5 秒記錄一次統計
 
@@ -189,16 +188,13 @@
 		pluginManager.register('fpsControls', new FPSControlsPlugin())
 
 		// 初始化所有 Plugin
-		pluginManager.init().then(() => {
-			console.log('[BIMViewer] PluginManager initialized')
-		})
+		pluginManager.init()
 
 		// 註冊控制回調
 		viewerControlStore.registerGridVisibleCallback((visible: boolean) => {
 			if (gridHelper) {
 				gridHelper.visible = visible
 				requestRender() // 網格可見性變化時請求渲染
-				console.log('[BIMViewer] Grid visibility set via control:', visible)
 			}
 		})
 
@@ -206,7 +202,6 @@
 			boundingBoxEnabled = visible
 			updateBoundingBox()
 			requestRender() // 邊界盒可見性變化時請求渲染
-			console.log('[BIMViewer] Bounding box visibility set via control:', visible)
 		})
 	}
 
@@ -396,13 +391,7 @@
 		}
 
 		// 性能監控（開發環境）
-		renderCount++
 		if (currentTime - lastFPSLog > FPS_LOG_INTERVAL) {
-			const avgFPS = renderCount / ((currentTime - lastFPSLog) / 1000)
-			console.log(
-				`[BIMViewer] Render Performance: ${avgFPS.toFixed(1)} FPS (${renderCount} renders in ${((currentTime - lastFPSLog) / 1000).toFixed(1)}s)`
-			)
-			renderCount = 0
 			lastFPSLog = currentTime
 		}
 	}
@@ -496,8 +485,6 @@
 		resetCameraView()
 
 		requestRender() // 模型載入後請求渲染
-
-		console.log('[BIMViewer] Model added to scene')
 	})
 
 	// 效果：監聽 BIM 設定變化並套用可見性覆寫
@@ -508,9 +495,8 @@
 		const model = scene.children.find((child) => child.userData.isModel)
 		if (!model) return
 
-		// 確保追蹤 nodeOverrides 和 updatedAt 的變化
+		// 確保追蹤 nodeOverrides 的變化
 		const overrides = settings.nodeOverrides
-		const timestamp = settings.updatedAt
 
 		// 遍歷所有節點套用可見性覆寫
 		model.traverse((child) => {
@@ -523,7 +509,6 @@
 		})
 
 		requestRender() // 可見性變化時請求渲染
-		console.log(`[BIMViewer] Applied visibility overrides (updated: ${timestamp})`)
 	})
 
 	// 移除：不再需要監聽設置變化（切換效果會自動重新整理頁面）

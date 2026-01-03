@@ -43,7 +43,6 @@ export const db = new BIMViewerDatabase()
 export async function saveModelToCache(key: string, data: ArrayBuffer): Promise<void> {
 	try {
 		await db.models.put({ key, data })
-		console.log(`[Database] Model saved to cache: ${key}`)
 	} catch (error) {
 		console.error('[Database] Failed to save model to cache:', error)
 		throw error
@@ -57,10 +56,8 @@ export async function getModelFromCache(key: string): Promise<ArrayBuffer | null
 	try {
 		const record = await db.models.get(key)
 		if (record) {
-			console.log(`[Database] Model loaded from cache: ${key}`)
 			return record.data
 		}
-		console.log(`[Database] Model not found in cache: ${key}`)
 		return null
 	} catch (error) {
 		console.error('[Database] Failed to get model from cache:', error)

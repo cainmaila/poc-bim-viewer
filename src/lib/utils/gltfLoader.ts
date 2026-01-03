@@ -54,8 +54,8 @@ export async function loadGLBModel(
 
 		// 步驟3：保存到快取（異步，不等待）
 		onProgress?.(70)
-		saveModelToCache(cacheKey, arrayBuffer).catch((error: unknown) => {
-			console.warn('[GLBLoader] Failed to cache model:', error)
+		saveModelToCache(cacheKey, arrayBuffer).catch(() => {
+			// 快取失敗不影響正常流程
 		})
 
 		// 步驟4：解析模型
