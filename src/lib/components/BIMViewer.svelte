@@ -452,6 +452,7 @@
 
 			// 當模型改變時清除選擇和邊界盒
 			currentSelectedObject = null
+			viewerControlStore.clearSelectedNode() // 清除選中狀態
 			if (boundingBoxHelper) {
 				scene.remove(boundingBoxHelper)
 				boundingBoxHelper.dispose()
@@ -538,6 +539,9 @@
 		if (target) {
 			// 追蹤當前選中的物件
 			currentSelectedObject = target
+
+			// 更新選中節點狀態
+			viewerControlStore.setSelectedNode(objectName)
 
 			applyXray(target)
 			updateBoundingBox()

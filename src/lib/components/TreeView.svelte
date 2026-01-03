@@ -2,6 +2,7 @@
 	import { SvelteSet } from 'svelte/reactivity'
 	import type { EnhancedTreeItem } from '$lib/types/bimSettings'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
+	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import * as Collapsible from '$lib/components/ui/collapsible'
 	import * as Tooltip from '$lib/components/ui/tooltip'
 	import { Button } from '$lib/components/ui/button'
@@ -17,6 +18,9 @@
 
 	let { items, onSelect, level = 0, parentVisible = true }: Props = $props()
 	let expandedIds = new SvelteSet<string>()
+
+	// 獲取當前選中的節點 ID
+	const selectedNodeId = $derived(viewerControlStore.selectedNodeId)
 
 	function toggleExpand(id: string, e: MouseEvent) {
 		e.stopPropagation()
@@ -38,8 +42,12 @@
 		<li class="flex flex-col">
 			<Collapsible.Root open={expandedIds.has(item.id)}>
 				<div
-					class="flex cursor-pointer items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap rounded px-2 py-1 text-[13px] text-foreground hover:bg-accent/20"
+					class="flex cursor-pointer items-center gap-1.5 overflow-hidden text-ellipsis whitespace-nowrap rounded px-2 py-1 text-[13px] text-foreground transition-colors duration-150 hover:bg-accent/20"
 					class:opacity-50={!item.visible || !parentVisible}
+					class:bg-accent={selectedNodeId === item.id}
+					class:text-accent-foreground={selectedNodeId === item.id}
+					class:ring-1={selectedNodeId === item.id}
+					class:ring-accent={selectedNodeId === item.id}
 					onclick={() => onSelect(item.id)}
 					role="button"
 					tabindex="0"
