@@ -2,6 +2,7 @@
 	import TreeView from './TreeView.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import * as ScrollArea from '$lib/components/ui/scroll-area'
+	import * as Tooltip from '$lib/components/ui/tooltip'
 	import { Button } from '$lib/components/ui/button'
 	import { ChevronLeft, ChevronRight, Eye } from 'lucide-svelte'
 
@@ -29,36 +30,56 @@
 		{#if !isCollapsed}
 			<h2 class="m-0 text-base font-semibold text-foreground">模型結構</h2>
 			<div class="flex items-center gap-1">
-				<Button
-					variant="ghost"
-					size="icon"
-					class="h-8 w-8"
-					onclick={handleResetVisibility}
-					aria-label="重置全部顯示"
-					title="重置全部顯示"
-				>
-					<Eye size={16} />
-				</Button>
-				<Button
-					variant="ghost"
-					size="icon"
-					class="h-8 w-8"
-					onclick={() => (isCollapsed = !isCollapsed)}
-					aria-label="Toggle Sidebar"
-				>
-					<ChevronLeft size={18} />
-				</Button>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<Button
+							variant="ghost"
+							size="icon"
+							class="h-8 w-8"
+							onclick={handleResetVisibility}
+							aria-label="重置全部顯示"
+						>
+							<Eye size={16} />
+						</Button>
+					</Tooltip.Trigger>
+					<Tooltip.Content>
+						<p>重置全部顯示</p>
+					</Tooltip.Content>
+				</Tooltip.Root>
+				<Tooltip.Root>
+					<Tooltip.Trigger>
+						<Button
+							variant="ghost"
+							size="icon"
+							class="h-8 w-8"
+							onclick={() => (isCollapsed = !isCollapsed)}
+							aria-label="收合側邊欄"
+						>
+							<ChevronLeft size={18} />
+						</Button>
+					</Tooltip.Trigger>
+					<Tooltip.Content>
+						<p>收合側邊欄</p>
+					</Tooltip.Content>
+				</Tooltip.Root>
 			</div>
 		{:else}
-			<Button
-				variant="ghost"
-				size="icon"
-				class="h-8 w-8"
-				onclick={() => (isCollapsed = !isCollapsed)}
-				aria-label="Toggle Sidebar"
-			>
-				<ChevronRight size={18} />
-			</Button>
+			<Tooltip.Root>
+				<Tooltip.Trigger>
+					<Button
+						variant="ghost"
+						size="icon"
+						class="h-8 w-8"
+						onclick={() => (isCollapsed = !isCollapsed)}
+						aria-label="展開側邊欄"
+					>
+						<ChevronRight size={18} />
+					</Button>
+				</Tooltip.Trigger>
+				<Tooltip.Content>
+					<p>展開側邊欄</p>
+				</Tooltip.Content>
+			</Tooltip.Root>
 		{/if}
 	</div>
 

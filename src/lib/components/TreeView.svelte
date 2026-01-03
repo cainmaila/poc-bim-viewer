@@ -3,6 +3,7 @@
 	import type { EnhancedTreeItem } from '$lib/types/bimSettings'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import * as Collapsible from '$lib/components/ui/collapsible'
+	import * as Tooltip from '$lib/components/ui/tooltip'
 	import { Button } from '$lib/components/ui/button'
 	import TreeView from './TreeView.svelte' // Self-import instead of deprecated svelte:self
 	import { FolderOpen, Box, Circle, ChevronRight, Pencil, Eye, EyeOff } from 'lucide-svelte'
@@ -45,16 +46,25 @@
 					onkeydown={(e) => e.key === 'Enter' && onSelect(item.id)}
 				>
 					{#if item.children.length > 0}
-						<Button
-							variant="ghost"
-							size="icon"
-							class="h-6 w-6 shrink-0 transition-transform duration-200 {expandedIds.has(item.id)
-								? 'rotate-90'
-								: ''}"
-							onclick={(e) => toggleExpand(item.id, e)}
-						>
-							<ChevronRight size={12} />
-						</Button>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								<Button
+									variant="ghost"
+									size="icon"
+									class="h-6 w-6 shrink-0 transition-transform duration-200 {expandedIds.has(
+										item.id
+									)
+										? 'rotate-90'
+										: ''}"
+									onclick={(e) => toggleExpand(item.id, e)}
+								>
+									<ChevronRight size={12} />
+								</Button>
+							</Tooltip.Trigger>
+							<Tooltip.Content>
+								<p>{expandedIds.has(item.id) ? '收合' : '展開'}</p>
+							</Tooltip.Content>
+						</Tooltip.Root>
 					{:else}
 						<span class="w-6 shrink-0"></span>
 					{/if}
@@ -72,25 +82,40 @@
 					<span class="flex-1 overflow-hidden text-ellipsis">{item.displayName}</span>
 
 					{#if item.hasOverrides}
-						<span class="shrink-0 text-xs text-accent" title="已自訂屬性">
-							<Pencil size={12} />
-						</span>
+						<Tooltip.Root>
+							<Tooltip.Trigger>
+								<span class="shrink-0 text-xs text-accent">
+									<Pencil size={12} />
+								</span>
+							</Tooltip.Trigger>
+							<Tooltip.Content>
+								<p>已自訂屬性</p>
+							</Tooltip.Content>
+						</Tooltip.Root>
 					{/if}
 
 					<!-- 可見性切換按鈕 -->
-					<Button
-						variant="ghost"
-						size="icon"
-						class="h-6 w-6 shrink-0 {item.visible ? 'text-foreground' : 'text-muted-foreground'}"
-						onclick={(e) => toggleVisibility(item, e)}
-						title={item.visible ? '點擊隱藏' : '點擊顯示'}
-					>
-						{#if item.visible}
-							<Eye size={14} />
-						{:else}
-							<EyeOff size={14} />
-						{/if}
-					</Button>
+					<Tooltip.Root>
+						<Tooltip.Trigger>
+							<Button
+								variant="ghost"
+								size="icon"
+								class="h-6 w-6 shrink-0 {item.visible
+									? 'text-foreground'
+									: 'text-muted-foreground'}"
+								onclick={(e) => toggleVisibility(item, e)}
+							>
+								{#if item.visible}
+									<Eye size={14} />
+								{:else}
+									<EyeOff size={14} />
+								{/if}
+							</Button>
+						</Tooltip.Trigger>
+						<Tooltip.Content>
+							<p>{item.visible ? '點擊隱藏' : '點擊顯示'}</p>
+						</Tooltip.Content>
+					</Tooltip.Root>
 				</div>
 
 				{#if item.children.length > 0 && item.visible}
