@@ -32,7 +32,7 @@
 		function findNodeById(items: TreeNode[], id: string): TreeNode | null {
 			for (const item of items) {
 				if (item.id === id) return item
-				if (item.children?.length > 0) {
+				if (item.children && item.children.length > 0) {
 					const found = findNodeById(item.children, id)
 					if (found) return found
 				}

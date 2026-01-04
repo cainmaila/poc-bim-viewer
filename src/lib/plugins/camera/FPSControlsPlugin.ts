@@ -115,6 +115,9 @@ export class FPSControlsPlugin extends BasePlugin {
 		// 禁用 OrbitControls
 		this.context.controls.enabled = false
 
+		// 重置 controlsPaused 狀態（防止非 FPS 模式下的動畫導致控制被暫停）
+		this.controlsPaused = false
+
 		// 附加事件監聽器
 		this.attachEventListeners()
 

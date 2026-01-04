@@ -49,7 +49,8 @@
       "mcp__serena__think_about_collected_information",
       "mcp__serena__list_memories",
       "mcp__serena__find_file",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "mcp__sequential-thinking__sequentialthinking"
     ]
   }
 }

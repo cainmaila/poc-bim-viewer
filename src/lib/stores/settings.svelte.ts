@@ -165,7 +165,6 @@ export class SettingsStore {
 
 		try {
 			localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-			console.log('[Settings] Saved to localStorage:', data)
 		} catch (error) {
 			console.error('Failed to save settings to localStorage:', error)
 		}
