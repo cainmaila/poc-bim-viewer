@@ -4,6 +4,7 @@
 	import * as Button from '$lib/components/ui/button'
 	import { X, Eye, EyeOff } from 'lucide-svelte'
 	import { fly } from 'svelte/transition'
+	import { notify } from '$lib/utils/notify'
 
 	interface TreeNode {
 		id: string
@@ -93,6 +94,9 @@
 			// 如果有新的覆寫，則設置
 			await bimSettingsStore.setNodeOverride(selectedNode.path, overrides)
 		}
+
+		// 顯示修改成功通知
+		notify.success('屬性修改成功')
 
 		// 保存後不關閉視窗，讓用戶可以繼續編輯
 	}
