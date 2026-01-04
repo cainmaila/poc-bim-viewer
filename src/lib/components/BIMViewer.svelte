@@ -450,14 +450,8 @@
 		if (existingModel) {
 			scene.remove(existingModel)
 
-			// 當模型改變時清除選擇和邊界盒
-			currentSelectedObject = null
-			viewerControlStore.clearSelectedNode() // 清除選中狀態
-			if (boundingBoxHelper) {
-				scene.remove(boundingBoxHelper)
-				boundingBoxHelper.dispose()
-				boundingBoxHelper = null
-			}
+			// 當模型改變時清除選擇（使用統一接口）
+			clearSelection()
 		}
 
 		// 添加新模型
@@ -590,6 +584,11 @@
 		requestRender() // X射線效果變化時請求渲染
 	}
 
+	/**
+	 * 重置 X-Ray 視覺效果
+	 * @internal 內部使用，僅處理視覺效果，不清除共享狀態
+	 * @see clearSelection - 外部調用請使用此方法
+	 */
 	export function resetXray() {
 		const model = scene.children.find((child) => child.userData.isModel)
 		if (!model) return
@@ -610,6 +609,29 @@
 		}
 
 		requestRender() // 重置 X射線時請求渲染
+	}
+
+	/**
+	 * 清除選取狀態（統一接口）
+	 * 同時清除視覺效果和共享狀態
+	 */
+	export function clearSelection() {
+		// 防禦性檢查
+		if (!scene) return
+
+		const model = scene.children.find((child) => child.userData.isModel)
+		if (!model) return
+
+		// 如果沒有選取則直接返回
+		if (!currentSelectedObject && !viewerControlStore.selectedNodeId) {
+			return
+		}
+
+		// 清除視覺效果
+		resetXray()
+
+		// 清除共享狀態
+		viewerControlStore.clearSelectedNode()
 	}
 
 	/**

@@ -1,11 +1,13 @@
 <script lang="ts">
 	import BIMViewer from '$lib/components/BIMViewer.svelte'
 	import Sidebar from '$lib/components/Sidebar.svelte'
+	import PropertyPanel from '$lib/components/PropertyPanel.svelte'
 	import SettingsMenu from '$lib/components/SettingsMenu.svelte'
 	import LoadingOverlay from '$lib/components/LoadingOverlay.svelte'
 	import * as Alert from '$lib/components/ui/alert'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { settingsStore } from '$lib/stores/settings.svelte'
+	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import { onMount } from 'svelte'
 	import { getActiveModelKey, getModelFromCache } from '$lib/utils/database'
 	import { Box, TriangleAlert, RefreshCw } from 'lucide-svelte'
@@ -86,6 +88,12 @@
 
 	function handleSelect(id: string) {
 		viewerRef?.flyTo(id)
+		// 設置選中的節點
+		viewerControlStore.setSelectedNode(id)
+	}
+
+	function handleClearSelection() {
+		viewerRef?.clearSelection()
 	}
 </script>
 
@@ -115,6 +123,10 @@
 	{#if !settingsStore.fpsMode}
 		<div class="pointer-events-none absolute bottom-0 left-0 top-0 z-10 flex">
 			<Sidebar onSelect={handleSelect} />
+		</div>
+
+		<div class="pointer-events-none absolute bottom-0 right-0 top-0 z-10 flex">
+			<PropertyPanel onClearSelection={handleClearSelection} />
 		</div>
 
 		<SettingsMenu bind:needsReload />
