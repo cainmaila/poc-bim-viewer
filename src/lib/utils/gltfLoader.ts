@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { getModelFromCache, saveModelToCache } from './database'
+import { configureDracoLoader } from './dracoLoader'
 
 /**
  * 載入 GLB 模型的結果
@@ -135,6 +136,7 @@ async function downloadGLB(
 
 /**
  * 使用 GLTFLoader 從 ArrayBuffer 解析 GLB 檔案
+ * 自動啟用 Draco 壓縮和 WebP 紋理支持
  * @param arrayBuffer - GLB 檔案的資料
  * @returns 解析後場景之 Promise
  */
@@ -142,7 +144,10 @@ async function parseGLBFromArrayBuffer(arrayBuffer: ArrayBuffer): Promise<THREE.
 	return new Promise((resolve, reject) => {
 		const loader = new GLTFLoader()
 
-		// 將 ArrayBuffer 轉為 GLTFLoader 可用的資料 URL
+		// 配置 Draco 壓縮解碼支持
+		configureDracoLoader(loader)
+
+		// 將 ArrayBuffer 轉為 GLTFLoader 可用的資料
 		// 注意：GLTFLoader.parse() 預期資料採用特定格式
 		loader.parse(
 			arrayBuffer,
