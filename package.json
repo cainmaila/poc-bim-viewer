@@ -1,7 +1,7 @@
 {
 	"name": "poc-bim-viewer",
 	"private": true,
-	"version": "1.5.4",
+	"version": "1.6.1",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -14,7 +14,8 @@
 		"lint": "prettier --check . && eslint .",
 		"test:unit": "vitest",
 		"test": "pnpm run test:unit -- --run && pnpm run test:e2e",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"postinstall": "node scripts/setup-draco.js"
 	},
 	"devDependencies": {
 		"@eslint/compat": "^1.4.1",
