@@ -1,4 +1,8 @@
 export { cn } from './cn.js'
+export {
+	CinematicLightingManager,
+	type CinematicLightingConfig
+} from './cinematicLightingManager.js'
 
 // Type helpers for shadcn-svelte components
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -11,6 +11,7 @@ interface StorageData {
 	postProcessing: PostProcessingConfig
 	rayBasedZoom: boolean
 	fpsMode: boolean
+	cinematicLighting: boolean
 }
 
 export class SettingsStore {
@@ -18,6 +19,7 @@ export class SettingsStore {
 	_boundingBoxVisible = $state(false)
 	_rayBasedZoom = $state(false)
 	_fpsMode = $state(false)
+	_cinematicLighting = $state(true)
 	_postProcessing = $state<PostProcessingConfig>({
 		bloomEnabled: true,
 		ssaoEnabled: true,
@@ -92,6 +94,21 @@ export class SettingsStore {
 		this.fpsMode = !this.fpsMode
 	}
 
+	// ========== Cinematic Lighting 相關 ==========
+
+	get cinematicLighting() {
+		return this._cinematicLighting
+	}
+
+	set cinematicLighting(value: boolean) {
+		this._cinematicLighting = value
+		this.saveToLocalStorage()
+	}
+
+	toggleCinematicLighting() {
+		this.cinematicLighting = !this.cinematicLighting
+	}
+
 	// ========== PostProcessing 相關 ==========
 
 	get postProcessing() {
@@ -160,6 +177,7 @@ export class SettingsStore {
 			boundingBoxVisible: this._boundingBoxVisible,
 			rayBasedZoom: this._rayBasedZoom,
 			fpsMode: this._fpsMode,
+			cinematicLighting: this._cinematicLighting,
 			postProcessing: this._postProcessing
 		}
 
@@ -184,6 +202,7 @@ export class SettingsStore {
 			this._boundingBoxVisible = data.boundingBoxVisible ?? false
 			this._rayBasedZoom = data.rayBasedZoom ?? false
 			this._fpsMode = data.fpsMode ?? false
+			this._cinematicLighting = data.cinematicLighting ?? true
 			this._postProcessing = {
 				bloomEnabled: data.postProcessing?.bloomEnabled ?? true,
 				ssaoEnabled: data.postProcessing?.ssaoEnabled ?? true,

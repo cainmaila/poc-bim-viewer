@@ -7,6 +7,8 @@
 	import { settingsStore } from '$lib/stores/settings.svelte'
 	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import { PluginManager, CameraPlugin, FPSControlsPlugin } from '$lib/plugins'
+	import { CinematicLightingManager } from '$lib/utils/cinematicLightingManager'
+	import { base } from '$app/paths'
 
 	interface Props {
 		autoRotate?: boolean
@@ -23,6 +25,7 @@
 	let gridHelper: THREE.GridHelper
 	let postProcessingManager: PostProcessingManager | null = null
 	let pluginManager: PluginManager
+	let cinematicLightingManager: CinematicLightingManager | null = null
 
 	// 邊界盒狀態
 	let currentSelectedObject: THREE.Object3D | null = null
@@ -109,6 +112,42 @@
 		return false
 	}
 
+	/**
+	 * 設置預設燈光系統（簡單的三光源）
+	 */
+	function setupDefaultLighting(scene: THREE.Scene) {
+		// 主燈（Key Light）- 白色方向光
+		const keyLight = new THREE.DirectionalLight(0xffffff, 1.2)
+		keyLight.position.set(60, 50, 50)
+		keyLight.castShadow = false
+		scene.add(keyLight)
+
+		// 填充燈（Fill Light）- 藍色方向光
+		const fillLight = new THREE.DirectionalLight(0x87ceeb, 0.6)
+		fillLight.position.set(-50, 30, 40)
+		fillLight.castShadow = false
+		scene.add(fillLight)
+
+		// 背景燈（Rim Light）- 溫暖色調聚光燈
+		const rimLight = new THREE.SpotLight(0xffaa88, 0.5)
+		rimLight.position.set(0, 60, -80)
+		rimLight.angle = Math.PI / 6
+		rimLight.penumbra = 0.5
+		rimLight.decay = 2
+		rimLight.castShadow = false
+		scene.add(rimLight)
+
+		// 環境光 - 提供基礎照明
+		const ambientLight = new THREE.AmbientLight(0xffffff, 0.4)
+		scene.add(ambientLight)
+
+		// 配置渲染器
+		renderer.shadowMap.enabled = false
+		renderer.toneMapping = THREE.ACESFilmicToneMapping
+		renderer.toneMappingExposure = 1.0
+		renderer.outputColorSpace = THREE.SRGBColorSpace
+	}
+
 	// 初始化Three.js場景
 	function initScene() {
 		if (!canvasRef) return
@@ -116,7 +155,9 @@
 		// 創建場景
 		scene = new THREE.Scene()
 		scene.background = new THREE.Color(0x1a1a1a) // 深灰背景
-		scene.fog = new THREE.Fog(0x1a1a1a, 150, 600) // 增加霧效距離
+		// 調整霧效以增強遠近亮度差異（大氣透視）
+		// 使用深藍色霧氣模擬傍晚/夕陽時的大氣感，並拉近霧的起始距離
+		scene.fog = new THREE.Fog(0x1a1a2e, 50, 400)
 
 		// 創建相機（透視，但我們將定位為等距感覺）
 		camera = new THREE.PerspectiveCamera(
@@ -136,8 +177,6 @@
 		})
 		renderer.setSize(canvasRef.clientWidth, canvasRef.clientHeight)
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-		renderer.shadowMap.enabled = true
-		renderer.shadowMap.type = THREE.PCFSoftShadowMap
 
 		// 創建控制項
 		controls = new OrbitControls(camera, renderer.domElement)
@@ -157,8 +196,40 @@
 			requestRender() // 最後渲染一次確保最終狀態
 		})
 
-		// 添加燈光
-		setupLights()
+		// 根據設置初始化燈光系統
+		if (settingsStore.cinematicLighting) {
+			// 初始化電影級燈光管理器
+			cinematicLightingManager = new CinematicLightingManager(scene, camera, renderer, {
+				keyLightIntensity: 2.0, // 強烈的夕陽主光
+				keyLightColor: '#ff9900', // 深橙色夕陽光
+				fillLightIntensity: 0.2, // 降低填充光，增加明暗對比
+				fillLightColor: '#001133', // 深藍色陰影，與夕陽形成強烈冷暖對比
+				rimLightIntensity: 2.0, // 強烈的邊緣光，勾勒輪廓
+				rimLightColor: '#ffd700', // 金色邊緣光，呼應夕陽
+				ambientIntensity: 0.05, // 極低的環境光，依賴主光和填充光
+				ambientColor: '#ffffff',
+				environmentIntensity: 0.2,
+				backgroundIntensity: 0.1,
+				tonemappingExposure: 0.35,
+				toneMappingType: THREE.ACESFilmicToneMapping,
+				shadowMapType: THREE.PCFSoftShadowMap,
+				shadowMapSize: 2048,
+				shadowBias: -0.0001,
+				followCamera: true,
+				cameraFollowDistance: 100, // 增加距離，模擬遠處太陽
+				cameraFollowHeight: 30 // 降低基礎高度，配合管理器中的係數模擬低角度
+			})
+
+			// 加載 HDRI 環境貼圖
+			const hdriPath = `${base}/dancing_hall_1k.hdr`
+			cinematicLightingManager.loadHDRIEnvironment(hdriPath).catch((err) => {
+				console.warn('HDRI 環境貼圖加載失敗:', err)
+				// 即使 HDRI 加載失敗也繼續運行，使用基本照明
+			})
+		} else {
+			// 使用預設燈光（簡單的三光源系統）
+			setupDefaultLighting(scene)
+		}
 
 		// 添加網格助手（預設隱藏，由 $effect 控制可見性）
 		gridHelper = new THREE.GridHelper(200, 20, 0x4a4a5e, 0x2a2a3e) // 增加尺寸和對比度
@@ -203,34 +274,6 @@
 			updateBoundingBox()
 			requestRender() // 邊界盒可見性變化時請求渲染
 		})
-	}
-
-	// 設定燈光（暗色主題 + 暖色照明）
-	function setupLights() {
-		// 環境光 - 降低強度，使用微暖色調
-		const ambientLight = new THREE.AmbientLight(0xffe8d6, 0.35)
-		scene.add(ambientLight)
-
-		// 主要方向光 - 暖白色，增強對比
-		const directionalLight = new THREE.DirectionalLight(0xfff5e6, 1.2)
-		directionalLight.position.set(50, 50, 50)
-		directionalLight.castShadow = true
-		directionalLight.shadow.camera.left = -50
-		directionalLight.shadow.camera.right = 50
-		directionalLight.shadow.camera.top = 50
-		directionalLight.shadow.camera.bottom = -50
-		directionalLight.shadow.mapSize.width = 2048
-		directionalLight.shadow.mapSize.height = 2048
-		scene.add(directionalLight)
-
-		// 半球光 - 暖色天空 + 冷色地面（互補對比）
-		const hemisphereLight = new THREE.HemisphereLight(0xffd699, 0x2a3f5f, 0.5)
-		scene.add(hemisphereLight)
-
-		// 填充光 - 減少陰影過暗
-		const fillLight = new THREE.DirectionalLight(0x6699ff, 0.3)
-		fillLight.position.set(-30, 20, -30)
-		scene.add(fillLight)
 	}
 
 	// 處理視窗調整大小
@@ -378,6 +421,11 @@
 			controls.update()
 		}
 
+		// 更新電影級燈光跟隨攝影機
+		if (cinematicLightingManager) {
+			cinematicLightingManager.updateLightsFollowCamera()
+		}
+
 		// 更新所有 Plugin（每幀執行）
 		if (pluginManager) {
 			pluginManager.update(deltaTime)
@@ -412,6 +460,12 @@
 				controls?.dispose()
 				renderer?.dispose()
 				pluginManager?.dispose()
+
+				// 清理電影級燈光管理器
+				if (cinematicLightingManager) {
+					cinematicLightingManager.dispose()
+					cinematicLightingManager = null
+				}
 
 				// 清理邊界盒輔助工具
 				if (boundingBoxHelper) {
@@ -463,8 +517,29 @@
 				child.userData.originalMaterial = child.material
 				child.userData.originalOpacity = child.material.opacity
 				child.userData.originalTransparent = child.material.transparent
+
+				// 確保法線被正確計算（修復小三角形問題）
+				if (child.geometry) {
+					child.geometry.computeVertexNormals()
+					child.geometry.computeBoundingBox()
+				}
+
+				// 啟用陰影投射和接收（電影級燈光需要）
+				child.castShadow = true
+				child.receiveShadow = true
+
+				// 確保材質支持雙面渲染（防止背面隱藏）
+				if (child.material instanceof THREE.Material) {
+					child.material.side = THREE.DoubleSide
+					child.material.needsUpdate = true
+				}
 			}
 		})
+
+		// 應用電影級材質更新
+		if (cinematicLightingManager) {
+			cinematicLightingManager.updateMaterialsForCinematic()
+		}
 
 		// 居中模型
 		const box = new THREE.Box3().setFromObject(currentModel)

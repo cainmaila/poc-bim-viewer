@@ -309,6 +309,18 @@
 					/>
 				</div>
 
+				<div class="flex items-center justify-between">
+					<div class="flex flex-col gap-0.5">
+						<span class="text-sm text-muted-foreground">電影級燈光</span>
+						<span class="text-xs text-muted-foreground/70">使用電影級燈光或預設燈光</span>
+					</div>
+					<Switch
+						checked={settingsStore.cinematicLighting}
+						onCheckedChange={() =>
+							handleSettingRequiringReload(() => settingsStore.toggleCinematicLighting())}
+					/>
+				</div>
+
 				<Separator />
 				<h3 class="text-sm font-semibold">後期處理效果</h3>
 
