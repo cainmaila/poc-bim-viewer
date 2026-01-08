@@ -1,6 +1,8 @@
 <script lang="ts">
 	import * as THREE from 'three'
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+	// @ts-expect-error - three-viewport-gizmo 沒有型別定義，但運行時正常工作
+	import { ViewportGizmo } from 'three-viewport-gizmo'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import { PostProcessingManager } from '$lib/utils/postProcessingManager'
@@ -26,6 +28,7 @@
 	let postProcessingManager: PostProcessingManager | null = null
 	let pluginManager: PluginManager
 	let cinematicLightingManager: CinematicLightingManager | null = null
+	let viewportGizmo: ViewportGizmo | null = null
 
 	// 邊界盒狀態
 	let currentSelectedObject: THREE.Object3D | null = null
@@ -241,6 +244,28 @@
 		// const axesHelper = new THREE.AxesHelper(10)
 		// scene.add(axesHelper)
 
+		// 初始化 ViewportGizmo（右下角 3D 坐標軸指示器）
+		viewportGizmo = new ViewportGizmo(camera, renderer, {
+			placement: 'bottom-right',
+			size: 128,
+			lineWidth: 2.5,
+			offset: { right: 20, bottom: 20 }
+		})
+		viewportGizmo.attachControls(controls)
+
+		// 監聽 ViewportGizmo 的事件以實現按需渲染
+		// @ts-expect-error - ViewportGizmo 事件系統
+		viewportGizmo.addEventListener('start', () => {
+			continuousRenderActive = true
+		})
+		// @ts-expect-error - ViewportGizmo 事件系統
+		viewportGizmo.addEventListener('end', () => {
+			continuousRenderActive = false
+			requestRender()
+		})
+		// @ts-expect-error - ViewportGizmo 事件系統
+		viewportGizmo.addEventListener('change', requestRender)
+
 		// 初始化後期處理管理器（從 settingsStore 讀取配置）
 		const config = settingsStore.postProcessing
 		postProcessingManager = new PostProcessingManager(scene, camera, renderer, config)
@@ -278,6 +303,9 @@
 
 	// 處理視窗調整大小
 	function handleResize() {
+		if (viewportGizmo) {
+			viewportGizmo.update()
+		}
 		if (!containerRef || !camera || !renderer) return
 
 		const width = containerRef.clientWidth
@@ -438,6 +466,12 @@
 			renderer.render(scene, camera)
 		}
 
+		// 只在需要時渲染 ViewportGizmo（不能在每幀都渲染，會導致卡頓）
+		// ViewportGizmo 會在交互時自動通過事件觸發重新渲染
+		if (viewportGizmo) {
+			viewportGizmo.render()
+		}
+
 		// 性能監控（開發環境）
 		if (currentTime - lastFPSLog > FPS_LOG_INTERVAL) {
 			lastFPSLog = currentTime
@@ -479,7 +513,12 @@
 					postProcessingManager.dispose()
 					postProcessingManager = null
 				}
-
+				// 清理 ViewportGizmo
+				if (viewportGizmo) {
+					viewportGizmo.detachControls()
+					viewportGizmo.dispose()
+					viewportGizmo = null
+				}
 				// 移除鍵盤事件監聽器
 				window.removeEventListener('keydown', handleKeyDown)
 				window.removeEventListener('keyup', handleKeyUp)
