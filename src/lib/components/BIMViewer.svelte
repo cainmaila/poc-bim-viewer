@@ -411,7 +411,7 @@
 		const currentTime = performance.now()
 		const deltaTime = (currentTime - lastTime) / 1000 // 轉換為秒
 		lastTime = currentTime
-		frameCount = (frameCount + 1) % 1000 // 防止溢出，僅用於偶數/奇數判斷
+		frameCount = (frameCount + 1) % 1000 // 防止長時間運行後的溢出問題
 
 		// 檢查是否需要持續渲染（動畫、WASD、FPS 等）
 		const needsContinuousRender = checkNeedsContinuousRender()
@@ -667,15 +667,19 @@
 			if (child instanceof THREE.Mesh) {
 				if (child === target || isDescendant(target, child)) {
 					// 高亮 - 恢復原始材質
-					child.material = child.userData.originalMaterial
+					if (child.userData.originalMaterial) {
+						child.material = child.userData.originalMaterial
+					}
 				} else {
 					// X射線 - 重用已緩存的X-ray材質或創建新的
-					if (!child.userData.xrayMaterial) {
+					if (!child.userData.xrayMaterial && child.userData.originalMaterial) {
 						child.userData.xrayMaterial = child.userData.originalMaterial.clone()
 						child.userData.xrayMaterial.transparent = true
 						child.userData.xrayMaterial.opacity = 0.1
 					}
-					child.material = child.userData.xrayMaterial
+					if (child.userData.xrayMaterial) {
+						child.material = child.userData.xrayMaterial
+					}
 				}
 			}
 		})
