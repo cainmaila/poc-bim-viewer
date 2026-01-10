@@ -200,6 +200,13 @@ class ModelCacheStore {
 			this._model.traverse((child) => {
 				if (child instanceof THREE.Mesh) {
 					child.geometry?.dispose()
+
+					// Dispose xray material if cached
+					if (child.userData.xrayMaterial) {
+						child.userData.xrayMaterial.dispose()
+						delete child.userData.xrayMaterial
+					}
+
 					if (Array.isArray(child.material)) {
 						child.material.forEach((material) => material.dispose())
 					} else {

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import * as THREE from 'three'
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-	// @ts-expect-error - three-viewport-gizmo 沒有型別定義，但運行時正常工作
 	import { ViewportGizmo } from 'three-viewport-gizmo'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
@@ -254,16 +253,13 @@
 		viewportGizmo.attachControls(controls)
 
 		// 監聽 ViewportGizmo 的事件以實現按需渲染
-		// @ts-expect-error - ViewportGizmo 事件系統
 		viewportGizmo.addEventListener('start', () => {
 			continuousRenderActive = true
 		})
-		// @ts-expect-error - ViewportGizmo 事件系統
 		viewportGizmo.addEventListener('end', () => {
 			continuousRenderActive = false
 			requestRender()
 		})
-		// @ts-expect-error - ViewportGizmo 事件系統
 		viewportGizmo.addEventListener('change', requestRender)
 
 		// 初始化後期處理管理器（從 settingsStore 讀取配置）
@@ -350,11 +346,6 @@
 		return () => {
 			observer.disconnect()
 		}
-	})
-
-	// 註冊 onMount 效果
-	$effect(() => {
-		if (!canvasRef) return
 	})
 
 	// WASD 鍵盤事件處理
@@ -684,14 +675,16 @@
 		model.traverse((child) => {
 			if (child instanceof THREE.Mesh) {
 				if (child === target || isDescendant(target, child)) {
-					// 高亮
+					// 高亮 - 恢復原始材質
 					child.material = child.userData.originalMaterial
 				} else {
-					// X射線
-					const xrayMaterial = child.userData.originalMaterial.clone()
-					xrayMaterial.transparent = true
-					xrayMaterial.opacity = 0.1
-					child.material = xrayMaterial
+					// X射線 - 重用已緩存的X-ray材質或創建新的
+					if (!child.userData.xrayMaterial) {
+						child.userData.xrayMaterial = child.userData.originalMaterial.clone()
+						child.userData.xrayMaterial.transparent = true
+						child.userData.xrayMaterial.opacity = 0.1
+					}
+					child.material = child.userData.xrayMaterial
 				}
 			}
 		})
