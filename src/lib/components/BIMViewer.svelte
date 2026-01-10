@@ -41,10 +41,6 @@
 	let renderRequested = false
 	let continuousRenderActive = false
 
-	// 性能監控（僅在開發環境啟用）
-	let lastFPSLog = performance.now()
-	const FPS_LOG_INTERVAL = 5000 // 每 5 秒記錄一次統計
-
 	// 使用 $derived 隔離 model 依賴，避免 store 其他屬性變化時觸發重新渲染
 	const currentModel = $derived(modelStore.model)
 
@@ -83,6 +79,18 @@
 	}
 
 	/**
+	 * 檢查是否有任何 WASD 鍵被按下
+	 */
+	function isAnyWASDKeyPressed(): boolean {
+		return Boolean(
+			keysPressed.get('KeyW') ||
+			keysPressed.get('KeyA') ||
+			keysPressed.get('KeyS') ||
+			keysPressed.get('KeyD')
+		)
+	}
+
+	/**
 	 * 檢查是否需要持續渲染
 	 * @returns true 如果需要持續渲染（動畫、交互等）
 	 */
@@ -94,14 +102,7 @@
 		if (controls?.autoRotate) return true
 
 		// 3. 檢查 WASD 移動
-		if (
-			keysPressed.get('KeyW') ||
-			keysPressed.get('KeyA') ||
-			keysPressed.get('KeyS') ||
-			keysPressed.get('KeyD')
-		) {
-			return true
-		}
+		if (isAnyWASDKeyPressed()) return true
 
 		// 4. 檢查 FPS 模式
 		const fpsPlugin = pluginManager?.getPlugin<FPSControlsPlugin>('fpsControls')
@@ -410,7 +411,7 @@
 		const currentTime = performance.now()
 		const deltaTime = (currentTime - lastTime) / 1000 // 轉換為秒
 		lastTime = currentTime
-		frameCount++
+		frameCount = (frameCount + 1) % 1000 // 防止溢出，僅用於偶數/奇數判斷
 
 		// 檢查是否需要持續渲染（動畫、WASD、FPS 等）
 		const needsContinuousRender = checkNeedsContinuousRender()
@@ -424,12 +425,7 @@
 		renderRequested = false
 
 		// 更新 WASD 平移（僅在有按鍵時執行）
-		if (
-			keysPressed.get('KeyW') ||
-			keysPressed.get('KeyA') ||
-			keysPressed.get('KeyS') ||
-			keysPressed.get('KeyD')
-		) {
+		if (isAnyWASDKeyPressed()) {
 			updatePanMovement()
 		}
 
@@ -461,11 +457,6 @@
 		// ViewportGizmo 會在交互時自動通過事件觸發重新渲染
 		if (viewportGizmo) {
 			viewportGizmo.render()
-		}
-
-		// 性能監控（開發環境）
-		if (currentTime - lastFPSLog > FPS_LOG_INTERVAL) {
-			lastFPSLog = currentTime
 		}
 	}
 
