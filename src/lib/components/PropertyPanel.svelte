@@ -1,4 +1,22 @@
 <script lang="ts">
+	/**
+	 * @component PropertyPanel
+	 *
+	 * 節點屬性編輯面板，用於檢視與修改 BIM 模型節點的屬性。
+	 *
+	 * 功能：
+	 * - 顯示選中節點的類型、名稱、可見性等資訊
+	 * - 支援修改節點顯示名稱
+	 * - 支援切換節點可見性
+	 * - 支援新增、編輯、刪除自定義屬性
+	 * - 屬性支援字串、數字、布林三種類型
+	 * - 修改後的屬性會持久化到 BIM 設定中
+	 *
+	 * @example
+	 * ```svelte
+	 * <PropertyPanel onClearSelection={handleClearSelection} />
+	 * ```
+	 */
 	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import * as Button from '$lib/components/ui/button'

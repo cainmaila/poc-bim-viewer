@@ -1,4 +1,20 @@
 <script lang="ts">
+	/**
+	 * @component Sidebar
+	 *
+	 * 模型結構側邊欄，顯示模型的樹狀結構。
+	 *
+	 * 功能：
+	 * - 顯示模型的階層結構樹
+	 * - 支援收合/展開側邊欄
+	 * - 提供重置全部可見性功能
+	 * - 整合 TreeView 組件顯示節點
+	 *
+	 * @example
+	 * ```svelte
+	 * <Sidebar onSelect={handleSelect} />
+	 * ```
+	 */
 	import TreeView from './TreeView.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import * as ScrollArea from '$lib/components/ui/scroll-area'

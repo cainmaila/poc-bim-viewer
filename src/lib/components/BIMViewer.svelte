@@ -1,4 +1,23 @@
 <script lang="ts">
+	/**
+	 * @component BIMViewer
+	 *
+	 * 核心 3D 模型查看器組件，使用 Three.js 渲染 BIM 模型。
+	 *
+	 * 功能：
+	 * - 支援 GLB 格式模型載入與顯示
+	 * - 提供軌道控制、FPS 模式等多種相機控制方式
+	 * - 內建後期處理效果（Bloom、SSAO、Outline、SMAA）
+	 * - 支援電影級燈光系統或預設三光源系統
+	 * - 提供 X-Ray 透視與物件選取功能
+	 * - 按需渲染以降低耗電
+	 * - WASD 鍵盤平移控制
+	 *
+	 * @example
+	 * ```svelte
+	 * <BIMViewer bind:this={viewerRef} autoRotate={false} />
+	 * ```
+	 */
 	import * as THREE from 'three'
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 	import { ViewportGizmo } from 'three-viewport-gizmo'

@@ -1,4 +1,22 @@
 <script lang="ts">
+	/**
+	 * @component TreeView
+	 *
+	 * 遞迴樹狀結構視圖組件，用於顯示模型的階層結構。
+	 *
+	 * 功能：
+	 * - 遞迴顯示多層級節點
+	 * - 支援展開/收合子節點
+	 * - 顯示節點類型圖示（Group、Mesh 等）
+	 * - 支援切換節點可見性
+	 * - 標示已自訂屬性的節點
+	 * - 高亮顯示選中的節點
+	 *
+	 * @example
+	 * ```svelte
+	 * <TreeView items={treeData} onSelect={handleSelect} level={0} />
+	 * ```
+	 */
 	import { SvelteSet } from 'svelte/reactivity'
 	import type { EnhancedTreeItem } from '$lib/types/bimSettings'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
