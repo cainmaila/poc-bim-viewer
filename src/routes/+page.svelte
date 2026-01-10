@@ -8,7 +8,6 @@
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { settingsStore } from '$lib/stores/settings.svelte'
 	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
-	import { onMount } from 'svelte'
 	import { getActiveModelKey, getModelFromCache } from '$lib/utils/database'
 	import { Box, TriangleAlert, RefreshCw } from 'lucide-svelte'
 
@@ -17,39 +16,45 @@
 	let showFPSNotification = $state(false)
 	let needsReload = $state(false)
 
-	onMount(async () => {
-		try {
-			const activeKey = await getActiveModelKey()
-			if (activeKey) {
-				const cachedData = await getModelFromCache(activeKey)
-				if (cachedData) {
-					// 從緩存載入模型
-					await modelStore.loadModelFromCache(activeKey)
-				}
-			}
-
-			// 監聽 FPS 模式變化
-			const eventBus = viewerRef?.getEventBus()
-			if (eventBus) {
-				eventBus.on('fps:modeChanged', (data: { enabled: boolean }) => {
-					// 同步更新 settingsStore（如果 FPS 模式是從其他地方觸發的）
-					settingsStore.fpsMode = data.enabled
-
-					// 進入 FPS 模式時顯示提示
-					if (data.enabled) {
-						showFPSNotification = true
-						// 3 秒後自動隱藏
-						setTimeout(() => {
-							showFPSNotification = false
-						}, 3000)
+	// 使用 $effect 取代 onMount 以符合 Svelte 5 最佳實踐
+	$effect(() => {
+		// 非同步初始化邏輯
+		const init = async () => {
+			try {
+				const activeKey = await getActiveModelKey()
+				if (activeKey) {
+					const cachedData = await getModelFromCache(activeKey)
+					if (cachedData) {
+						// 從緩存載入模型
+						await modelStore.loadModelFromCache(activeKey)
 					}
-				})
+				}
+
+				// 監聽 FPS 模式變化
+				const eventBus = viewerRef?.getEventBus()
+				if (eventBus) {
+					eventBus.on('fps:modeChanged', (data: { enabled: boolean }) => {
+						// 同步更新 settingsStore（如果 FPS 模式是從其他地方觸發的）
+						settingsStore.fpsMode = data.enabled
+
+						// 進入 FPS 模式時顯示提示
+						if (data.enabled) {
+							showFPSNotification = true
+							// 3 秒後自動隱藏
+							setTimeout(() => {
+								showFPSNotification = false
+							}, 3000)
+						}
+					})
+				}
+			} catch (error) {
+				console.error('[App] Initialization error:', error)
+				modelStore.error =
+					error instanceof Error ? `初始化失敗: ${error.message}` : '初始化失敗，請重新整理頁面'
 			}
-		} catch (error) {
-			console.error('[App] Initialization error:', error)
-			modelStore.error =
-				error instanceof Error ? `初始化失敗: ${error.message}` : '初始化失敗，請重新整理頁面'
 		}
+
+		init()
 	})
 
 	function handleDragOver(e: DragEvent) {
