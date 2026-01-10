@@ -249,7 +249,8 @@
 			placement: 'bottom-right',
 			size: 128,
 			lineWidth: 2.5,
-			offset: { right: 20, bottom: 20 }
+			offset: { right: 20, bottom: 20 },
+			className: 'viewport-gizmo-container'
 		})
 		viewportGizmo.attachControls(controls)
 

@@ -53,3 +53,13 @@
 			'calt' 1;
 	}
 }
+
+/* Set ViewportGizmo z-index lower than PropertyPanel (z-index 1100) */
+.viewport-gizmo-container {
+	z-index: 100 !important;
+}
+
+/* Hide ViewportGizmo when PropertyPanel is open */
+.property-panel-open .viewport-gizmo-container {
+	display: none !important;
+}

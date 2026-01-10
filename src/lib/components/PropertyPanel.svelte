@@ -13,6 +13,7 @@
 		visible: boolean
 		path: string
 		type: string
+		properties: Record<string, string>
 		children?: TreeNode[]
 	}
 
@@ -47,12 +48,49 @@
 	// 表單狀態
 	let formName = $state('')
 	let formVisible = $state(true)
+	let formProperties = $state<Record<string, string>>({})
 
-	// 當選中的節點變化時，重置表單
+	// 新增屬性狀態
+	let isAddingProperty = $state(false)
+	let newPropKey = $state('')
+	let newPropValue = $state('')
+
+	// 當選中的節點 ID 變化時，重置表單
+	let previousNodeId: string | null = null
+	$effect(() => {
+		console.log('[PropertyPanel] $effect triggered, selectedNodeId:', selectedNodeId)
+		const currentNodeId = selectedNodeId
+		if (currentNodeId && currentNodeId !== previousNodeId) {
+			console.log(
+				'[PropertyPanel] Node changed, resetting form. Old:',
+				previousNodeId,
+				'New:',
+				currentNodeId
+			)
+			previousNodeId = currentNodeId
+			// 使用 selectedNode 的值來初始化表單
+			if (selectedNode) {
+				formName = selectedNode.displayName
+				formVisible = selectedNode.visible
+				// 複製屬性，避免直接修改引用
+				formProperties = { ...selectedNode.properties }
+				isAddingProperty = false
+			}
+		} else if (!currentNodeId) {
+			previousNodeId = null
+		}
+	})
+
+	// 當 PropertyPanel 開啟時，給 body 添加 class 以隱藏 ViewportGizmo
 	$effect(() => {
 		if (selectedNode) {
-			formName = selectedNode.displayName
-			formVisible = selectedNode.visible
+			document.body.classList.add('property-panel-open')
+		} else {
+			document.body.classList.remove('property-panel-open')
+		}
+
+		return () => {
+			document.body.classList.remove('property-panel-open')
 		}
 	})
 
@@ -66,11 +104,36 @@
 		onClearSelection?.()
 	}
 
+	// 新增屬性
+	function addProperty() {
+		console.log('[PropertyPanel] addProperty called')
+		if (newPropKey.trim()) {
+			formProperties[newPropKey.trim()] = newPropValue
+			console.log('[PropertyPanel] Added property:', newPropKey.trim(), '=', newPropValue)
+			newPropKey = ''
+			newPropValue = ''
+			isAddingProperty = false
+		}
+	}
+
+	// 更新屬性
+	function updateProperty(key: string, value: string) {
+		formProperties[key] = value
+	}
+
+	// 刪除屬性
+	function deleteProperty(key: string) {
+		const newProps = { ...formProperties }
+		delete newProps[key]
+		formProperties = newProps
+	}
+
 	// 修改按鈕
 	async function handleSave() {
+		console.log('[PropertyPanel] handleSave called')
 		if (!selectedNode) return
 
-		const overrides: Record<string, string | boolean> = {}
+		const overrides: import('$lib/types/bimSettings').NodeOverrides = {}
 
 		// 處理 displayName 覆寫
 		// 如果 formName 不為空且與 originalName 不同，則設置覆寫
@@ -86,16 +149,28 @@
 		}
 		// 如果是 true，則不加入 overrides（表示使用預設）
 
+		// 處理 properties 覆寫
+		if (Object.keys(formProperties).length > 0) {
+			overrides.properties = formProperties
+		}
+
+		console.log('[PropertyPanel] Saving overrides:', overrides)
+
 		// 先刪除舊的覆寫，然後設置新的（如果有）
 		// 這樣可以確保舊的屬性不會殘留
+		console.log('[PropertyPanel] Removing old override...')
 		await bimSettingsStore.removeNodeOverride(selectedNode.path)
+		console.log('[PropertyPanel] Old override removed')
 
 		if (Object.keys(overrides).length > 0) {
 			// 如果有新的覆寫，則設置
+			console.log('[PropertyPanel] Setting new override...')
 			await bimSettingsStore.setNodeOverride(selectedNode.path, overrides)
+			console.log('[PropertyPanel] New override set')
 		}
 
 		// 顯示修改成功通知
+		console.log('[PropertyPanel] handleSave complete')
 		notify.success('屬性修改成功')
 
 		// 保存後不關閉視窗，讓用戶可以繼續編輯
@@ -104,7 +179,7 @@
 
 {#if selectedNode}
 	<aside
-		class="pointer-events-auto fixed right-0 top-0 z-[110] flex h-full w-[300px] flex-col border-l border-border bg-card shadow-[-4px_0_16px_rgba(0,0,0,0.1)]"
+		class="pointer-events-auto fixed right-0 top-0 z-[1100] flex h-full w-[300px] flex-col border-l border-border bg-card shadow-[-4px_0_16px_rgba(0,0,0,0.1)]"
 		transition:fly={{ x: 300, duration: 200 }}
 	>
 		<!-- 標題列 -->
@@ -132,6 +207,7 @@
 						type="text"
 						bind:value={formName}
 						placeholder={selectedNode.originalName}
+						onkeydown={(e) => e.stopPropagation()}
 						class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
 					/>
 					<div class="text-xs text-muted-foreground">
@@ -159,6 +235,97 @@
 								<span>隱藏</span>
 							{/if}
 						</button>
+					</div>
+				</div>
+
+				<!-- 自定義屬性 -->
+				<div class="space-y-3 pt-2">
+					<div class="flex items-center justify-between">
+						<div class="text-sm font-medium text-foreground">自定義屬性</div>
+					</div>
+
+					<!-- 屬性列表 -->
+					<div class="space-y-2">
+						{#each Object.entries(formProperties) as [key, value] (key)}
+							<div class="flex items-center gap-2 rounded-md border border-input bg-background p-2">
+								<div class="flex-1 space-y-1">
+									<div class="text-xs font-medium text-muted-foreground">{key}</div>
+									<input
+										type="text"
+										{value}
+										onblur={(e) => updateProperty(key, e.currentTarget.value)}
+										onkeydown={(e) => e.stopPropagation()}
+										class="w-full bg-transparent text-sm text-foreground focus:outline-none"
+									/>
+								</div>
+								<Button.Button
+									variant="ghost"
+									size="icon"
+									class="h-6 w-6 text-muted-foreground hover:text-destructive"
+									onclick={() => deleteProperty(key)}
+								>
+									<X size={14} />
+								</Button.Button>
+							</div>
+						{/each}
+
+						{#if Object.keys(formProperties).length === 0}
+							<div class="py-2 text-center text-xs text-muted-foreground">尚無自定義屬性</div>
+						{/if}
+					</div>
+
+					<!-- 新增屬性表單 -->
+					<div class="rounded-md border border-dashed border-border p-2">
+						{#if isAddingProperty}
+							<div class="space-y-2">
+								<input
+									type="text"
+									bind:value={newPropKey}
+									placeholder="屬性名稱 (Key)"
+									onkeydown={(e) => e.stopPropagation()}
+									class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+								/>
+								<input
+									type="text"
+									bind:value={newPropValue}
+									placeholder="屬性值 (Value)"
+									onkeydown={(e) => e.stopPropagation()}
+									class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+								/>
+								<div class="flex gap-2">
+									<Button.Button
+										variant="ghost"
+										size="sm"
+										class="h-7 flex-1"
+										onclick={() => (isAddingProperty = false)}
+									>
+										取消
+									</Button.Button>
+									<Button.Button
+										variant="secondary"
+										size="sm"
+										class="h-7 flex-1"
+										disabled={!newPropKey.trim()}
+										onclick={addProperty}
+									>
+										確認
+									</Button.Button>
+								</div>
+							</div>
+						{:else}
+							<Button.Button
+								variant="ghost"
+								size="sm"
+								class="h-7 w-full text-xs text-muted-foreground"
+								onclick={() => {
+									isAddingProperty = true
+									newPropKey = ''
+									newPropValue = ''
+								}}
+							>
+								+ 新增屬性
+							</Button.Button>
+						{/if}
 					</div>
 				</div>
 

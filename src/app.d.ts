@@ -46,11 +46,14 @@ declare module 'three-viewport-gizmo' {
 
 	export class ViewportGizmo {
 		constructor(camera: THREE.Camera, renderer: THREE.WebGLRenderer, config?: GizmoOptions)
+		domElement: HTMLElement
 		render(): void
 		update(): void
 		dispose(): void
 		attachControls(controls: OrbitControls): void
 		detachControls(): void
+		addEventListener(type: string, listener: () => void): void
+		removeEventListener(type: string, listener: () => void): void
 	}
 }
 
