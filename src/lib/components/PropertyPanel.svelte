@@ -49,24 +49,29 @@
 	let formName = $state('')
 	let formVisible = $state(true)
 	let formProperties = $state<Record<string, string>>({})
+	// 用於追蹤每個屬性的類型 (string, number, boolean)
+	let formPropertyTypes = $state<Record<string, 'string' | 'number' | 'boolean'>>({})
 
 	// 新增屬性狀態
 	let isAddingProperty = $state(false)
 	let newPropKey = $state('')
 	let newPropValue = $state('')
+	let newPropType = $state<'string' | 'number' | 'boolean'>('string')
+
+	// 根據值推斷類型
+	function inferType(value: string): 'string' | 'number' | 'boolean' {
+		if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') return 'boolean'
+		if (!isNaN(Number(value)) && value.trim() !== '') return 'number'
+		return 'string'
+	}
 
 	// 當選中的節點 ID 變化時，重置表單
 	let previousNodeId: string | null = null
 	$effect(() => {
-		console.log('[PropertyPanel] $effect triggered, selectedNodeId:', selectedNodeId)
+		// console.log('[PropertyPanel] $effect triggered, selectedNodeId:', selectedNodeId)
 		const currentNodeId = selectedNodeId
 		if (currentNodeId && currentNodeId !== previousNodeId) {
-			console.log(
-				'[PropertyPanel] Node changed, resetting form. Old:',
-				previousNodeId,
-				'New:',
-				currentNodeId
-			)
+			// console.log('[PropertyPanel] Node changed, resetting form. Old:', previousNodeId, 'New:', currentNodeId)
 			previousNodeId = currentNodeId
 			// 使用 selectedNode 的值來初始化表單
 			if (selectedNode) {
@@ -74,7 +79,17 @@
 				formVisible = selectedNode.visible
 				// 複製屬性，避免直接修改引用
 				formProperties = { ...selectedNode.properties }
+
+				// 初始化類型
+				formPropertyTypes = {}
+				for (const [key, value] of Object.entries(formProperties)) {
+					formPropertyTypes[key] = inferType(value)
+				}
+
 				isAddingProperty = false
+				newPropKey = ''
+				newPropValue = ''
+				newPropType = 'string'
 			}
 		} else if (!currentNodeId) {
 			previousNodeId = null
@@ -106,19 +121,53 @@
 
 	// 新增屬性
 	function addProperty() {
-		console.log('[PropertyPanel] addProperty called')
+		// console.log('[PropertyPanel] addProperty called')
 		if (newPropKey.trim()) {
-			formProperties[newPropKey.trim()] = newPropValue
-			console.log('[PropertyPanel] Added property:', newPropKey.trim(), '=', newPropValue)
+			let finalValue = newPropValue
+
+			// 根據類型處理值
+			if (newPropType === 'boolean') {
+				// 確保布林值是 "true" 或 "false"
+				finalValue = (newPropValue === 'true').toString()
+			} else if (newPropType === 'number') {
+				// 確保是有效數字
+				if (isNaN(Number(newPropValue))) {
+					notify.error('請輸入有效的數字')
+					return
+				}
+			}
+
+			formProperties[newPropKey.trim()] = finalValue
+			formPropertyTypes[newPropKey.trim()] = newPropType
+
+			// console.log('[PropertyPanel] Added property:', newPropKey.trim(), '=', finalValue)
 			newPropKey = ''
 			newPropValue = ''
+			newPropType = 'string'
 			isAddingProperty = false
 		}
 	}
 
-	// 更新屬性
+	// 更新屬性值
 	function updateProperty(key: string, value: string) {
 		formProperties[key] = value
+	}
+
+	// 更新屬性類型
+	function updatePropertyType(key: string, type: 'string' | 'number' | 'boolean') {
+		formPropertyTypes[key] = type
+
+		// 類型切換時的默認值處理
+		const currentValue = formProperties[key]
+		if (type === 'boolean') {
+			if (currentValue !== 'true' && currentValue !== 'false') {
+				formProperties[key] = 'false'
+			}
+		} else if (type === 'number') {
+			if (isNaN(Number(currentValue))) {
+				formProperties[key] = '0'
+			}
+		}
 	}
 
 	// 刪除屬性
@@ -126,6 +175,10 @@
 		const newProps = { ...formProperties }
 		delete newProps[key]
 		formProperties = newProps
+
+		const newTypes = { ...formPropertyTypes }
+		delete newTypes[key]
+		formPropertyTypes = newTypes
 	}
 
 	// 修改按鈕
@@ -179,8 +232,8 @@
 
 {#if selectedNode}
 	<aside
-		class="pointer-events-auto fixed right-0 top-0 z-[1100] flex h-full w-[300px] flex-col border-l border-border bg-card shadow-[-4px_0_16px_rgba(0,0,0,0.1)]"
-		transition:fly={{ x: 300, duration: 200 }}
+		class="pointer-events-auto fixed right-0 top-0 z-[1100] flex h-full w-[400px] flex-col border-l border-border bg-card shadow-[-4px_0_16px_rgba(0,0,0,0.1)]"
+		transition:fly={{ x: 400, duration: 200 }}
 	>
 		<!-- 標題列 -->
 		<div class="flex min-h-12 items-center justify-between border-b border-border px-4 py-3">
@@ -245,53 +298,151 @@
 					</div>
 
 					<!-- 屬性列表 -->
-					<div class="space-y-2">
-						{#each Object.entries(formProperties) as [key, value] (key)}
-							<div class="flex items-center gap-2 rounded-md border border-input bg-background p-2">
-								<div class="flex-1 space-y-1">
-									<div class="text-xs font-medium text-muted-foreground">{key}</div>
-									<input
-										type="text"
-										{value}
-										onblur={(e) => updateProperty(key, e.currentTarget.value)}
-										onkeydown={(e) => e.stopPropagation()}
-										class="w-full bg-transparent text-sm text-foreground focus:outline-none"
-									/>
-								</div>
-								<Button.Button
-									variant="ghost"
-									size="icon"
-									class="h-6 w-6 text-muted-foreground hover:text-destructive"
-									onclick={() => deleteProperty(key)}
-								>
-									<X size={14} />
-								</Button.Button>
-							</div>
-						{/each}
+					<div class="overflow-hidden rounded-md border border-input bg-background">
+						<table class="w-full text-sm">
+							<thead class="bg-muted/30">
+								<tr class="border-b border-border text-left">
+									<th class="w-[30%] px-3 py-2 font-medium text-muted-foreground">名稱</th>
+									<th class="w-[25%] px-3 py-2 font-medium text-muted-foreground">類型</th>
+									<th class="px-3 py-2 font-medium text-muted-foreground">值</th>
+									<th class="w-[30px]"></th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each Object.entries(formProperties) as [key, value] (key)}
+									<tr class="border-b border-border/50 last:border-0 hover:bg-muted/20">
+										<!-- Key -->
+										<td
+											class="max-w-[100px] truncate px-3 py-2 align-middle font-medium text-foreground"
+											title={key}>{key}</td
+										>
 
-						{#if Object.keys(formProperties).length === 0}
-							<div class="py-2 text-center text-xs text-muted-foreground">尚無自定義屬性</div>
-						{/if}
+										<!-- Type Selector -->
+										<td class="px-2 py-2 align-middle">
+											<select
+												class="w-full cursor-pointer bg-transparent text-xs focus:outline-none"
+												value={formPropertyTypes[key] || 'string'}
+												onchange={(e) =>
+													updatePropertyType(
+														key,
+														e.currentTarget.value as 'string' | 'number' | 'boolean'
+													)}
+											>
+												<option value="string">字串</option>
+												<option value="number">數字</option>
+												<option value="boolean">布林</option>
+											</select>
+										</td>
+
+										<!-- Value Input -->
+										<td class="px-3 py-2 align-middle">
+											{#if formPropertyTypes[key] === 'boolean'}
+												<select
+													{value}
+													onchange={(e) => updateProperty(key, e.currentTarget.value)}
+													class="w-full bg-transparent text-foreground focus:outline-none"
+												>
+													<option value="true">True</option>
+													<option value="false">False</option>
+												</select>
+											{:else if formPropertyTypes[key] === 'number'}
+												<input
+													type="number"
+													{value}
+													onblur={(e) => updateProperty(key, e.currentTarget.value)}
+													onkeydown={(e) => e.stopPropagation()}
+													step="any"
+													class="w-full bg-transparent text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+													placeholder="0"
+												/>
+											{:else}
+												<input
+													type="text"
+													{value}
+													onblur={(e) => updateProperty(key, e.currentTarget.value)}
+													onkeydown={(e) => e.stopPropagation()}
+													class="w-full bg-transparent text-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+													placeholder="輸入..."
+												/>
+											{/if}
+										</td>
+
+										<!-- Delete -->
+										<td class="px-1 py-2 text-center align-middle">
+											<Button.Button
+												variant="ghost"
+												size="icon"
+												class="h-6 w-6 text-muted-foreground hover:text-destructive"
+												onclick={() => deleteProperty(key)}
+												title="刪除"
+											>
+												<X size={14} />
+											</Button.Button>
+										</td>
+									</tr>
+								{/each}
+
+								{#if Object.keys(formProperties).length === 0}
+									<tr>
+										<td colspan="4" class="py-6 text-center text-xs text-muted-foreground">
+											尚無自定義屬性，請點擊下方新增
+										</td>
+									</tr>
+								{/if}
+							</tbody>
+						</table>
 					</div>
 
 					<!-- 新增屬性表單 -->
 					<div class="rounded-md border border-dashed border-border p-2">
 						{#if isAddingProperty}
 							<div class="space-y-2">
-								<input
-									type="text"
-									bind:value={newPropKey}
-									placeholder="屬性名稱 (Key)"
-									onkeydown={(e) => e.stopPropagation()}
-									class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-								/>
-								<input
-									type="text"
-									bind:value={newPropValue}
-									placeholder="屬性值 (Value)"
-									onkeydown={(e) => e.stopPropagation()}
-									class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-								/>
+								<div class="flex gap-2">
+									<input
+										type="text"
+										bind:value={newPropKey}
+										placeholder="屬性名稱"
+										onkeydown={(e) => e.stopPropagation()}
+										class="flex-1 rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+									<select
+										bind:value={newPropType}
+										class="w-[80px] rounded-md border border-input bg-background px-1 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									>
+										<option value="string">字串</option>
+										<option value="number">數字</option>
+										<option value="boolean">布林</option>
+									</select>
+								</div>
+
+								{#if newPropType === 'boolean'}
+									<select
+										bind:value={newPropValue}
+										class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									>
+										<option value="" disabled selected>選擇布林值</option>
+										<option value="true">True</option>
+										<option value="false">False</option>
+									</select>
+								{:else if newPropType === 'number'}
+									<input
+										type="number"
+										bind:value={newPropValue}
+										placeholder="輸入數值"
+										onkeydown={(e) => e.stopPropagation()}
+										step="any"
+										class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								{:else}
+									<input
+										type="text"
+										bind:value={newPropValue}
+										placeholder="輸入字串值"
+										onkeydown={(e) => e.stopPropagation()}
+										class="w-full rounded-md border border-input bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+									/>
+								{/if}
+
 								<div class="flex gap-2">
 									<Button.Button
 										variant="ghost"
@@ -305,7 +456,9 @@
 										variant="secondary"
 										size="sm"
 										class="h-7 flex-1"
-										disabled={!newPropKey.trim()}
+										disabled={!newPropKey.trim() ||
+											(newPropType === 'boolean' && !newPropValue) ||
+											(newPropType === 'number' && newPropValue === '')}
 										onclick={addProperty}
 									>
 										確認
@@ -321,6 +474,7 @@
 									isAddingProperty = true
 									newPropKey = ''
 									newPropValue = ''
+									newPropType = 'string'
 								}}
 							>
 								+ 新增屬性
