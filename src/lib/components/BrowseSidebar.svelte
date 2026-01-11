@@ -16,15 +16,20 @@
 	let { onSelect }: Props = $props()
 	let isCollapsed = $state(false)
 
-	// Use $derived with untrack to prevent infinite loops
-	// Track settings object changes but not the filtered result
-	const filteredTreeData = $derived(
-		untrack(() => {
-			const data = bimSettingsStore.enhancedTreeData
-			const result = filterTreeForBrowseMode(data)
-			return result
+	// Use $state to store the filtered tree data
+	let filteredTreeData = $state<typeof bimSettingsStore.enhancedTreeData>([])
+
+	// Use $effect to reactively update filteredTreeData when store changes
+	$effect(() => {
+		const rawData = bimSettingsStore.enhancedTreeData
+
+		// Use untrack for the filtering process to avoid infinite loops
+		const result = untrack(() => {
+			return filterTreeForBrowseMode(rawData)
 		})
-	)
+
+		filteredTreeData = result
+	})
 </script>
 
 <aside
