@@ -13,6 +13,7 @@
 		visible: boolean
 		path: string
 		type: string
+		menu?: 'root' | 'disabled' | 'hide'
 		children?: TreeNode[]
 	}
 
@@ -47,12 +48,14 @@
 	// 表單狀態
 	let formName = $state('')
 	let formVisible = $state(true)
+	let formMenu = $state<'root' | 'disabled' | 'hide' | undefined>(undefined)
 
 	// 當選中的節點變化時，重置表單
 	$effect(() => {
 		if (selectedNode) {
 			formName = selectedNode.displayName
 			formVisible = selectedNode.visible
+			formMenu = selectedNode.menu
 		}
 	})
 
@@ -85,6 +88,11 @@
 			overrides.visible = false
 		}
 		// 如果是 true，則不加入 overrides（表示使用預設）
+
+		// 處理 menu 覆寫
+		if (formMenu !== undefined) {
+			overrides.menu = formMenu
+		}
 
 		// 先刪除舊的覆寫，然後設置新的（如果有）
 		// 這樣可以確保舊的屬性不會殘留
@@ -160,6 +168,21 @@
 							{/if}
 						</button>
 					</div>
+				</div>
+
+				<!-- Menu 模式選擇 -->
+				<div class="space-y-2">
+					<div class="text-sm font-medium text-foreground">瀏覽模式顯示</div>
+					<select
+						bind:value={formMenu}
+						class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
+					>
+						<option value={undefined}>預設（正常顯示）</option>
+						<option value="root">設為根節點</option>
+						<option value="hide">隱藏此節點（保留子節點）</option>
+						<option value="disabled">隱藏此節點及子節點</option>
+					</select>
+					<div class="text-xs text-muted-foreground">控制此節點在瀏覽模式中的顯示方式</div>
 				</div>
 
 				<!-- 節點路徑 (調試用，可選) -->
