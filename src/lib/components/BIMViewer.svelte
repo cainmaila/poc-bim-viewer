@@ -2,6 +2,7 @@
 	import * as THREE from 'three'
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 	import { ViewportGizmo } from 'three-viewport-gizmo'
+	import { untrack } from 'svelte'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import { PostProcessingManager } from '$lib/utils/postProcessingManager'
@@ -586,20 +587,27 @@
 		const model = scene.children.find((child) => child.userData.isModel)
 		if (!model) return
 
-		// 確保追蹤 nodeOverrides 的變化
-		const overrides = settings.nodeOverrides
+		// 使用 untrack 避免追蹤深層 overrides 變化導致無限循環
+		// 只在 settings 物件本身變化時執行
+		untrack(() => {
+			const overrides = settings.nodeOverrides
 
-		// 遍歷所有節點套用可見性覆寫
-		model.traverse((child) => {
-			const path = bimSettingsStore.getPathByUUID(child.uuid)
-			if (!path) return
+			// 遍歷所有節點套用可見性覆寫
+			model.traverse((child) => {
+				const path = bimSettingsStore.getPathByUUID(child.uuid)
+				if (!path) return
 
-			const override = overrides[path]
-			// 如果有覆寫則使用覆寫值，否則預設為可見
-			child.visible = override?.visible ?? true
+				const override = overrides[path]
+				const newVisible = override?.visible ?? true
+
+				// 只在值真正改變時更新
+				if (child.visible !== newVisible) {
+					child.visible = newVisible
+				}
+			})
+
+			requestRender() // 可見性變化時請求渲染
 		})
-
-		requestRender() // 可見性變化時請求渲染
 	})
 
 	// 移除：不再需要監聽設置變化（切換效果會自動重新整理頁面）

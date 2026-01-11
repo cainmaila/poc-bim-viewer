@@ -7,6 +7,7 @@
 	import { Button } from '$lib/components/ui/button'
 	import { ChevronLeft, ChevronRight } from 'lucide-svelte'
 	import { fade } from 'svelte/transition'
+	import { untrack } from 'svelte'
 
 	interface Props {
 		onSelect: (id: string) => void
@@ -15,8 +16,15 @@
 	let { onSelect }: Props = $props()
 	let isCollapsed = $state(false)
 
-	// Use enhanced tree data from BIM settings store and filter for browse mode
-	const filteredTreeData = $derived(filterTreeForBrowseMode(bimSettingsStore.enhancedTreeData))
+	// Use $derived with untrack to prevent infinite loops
+	// Track settings object changes but not the filtered result
+	const filteredTreeData = $derived(
+		untrack(() => {
+			const data = bimSettingsStore.enhancedTreeData
+			const result = filterTreeForBrowseMode(data)
+			return result
+		})
+	)
 </script>
 
 <aside
