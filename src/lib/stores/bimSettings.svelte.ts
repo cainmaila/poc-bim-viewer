@@ -61,14 +61,12 @@ class BIMSettingsStore {
 
 		// 1. Build path mapping
 		this._pathMapping = buildPathMapping(sceneRoot)
-		console.log(`[BIMSettings] Built path mapping: ${this._pathMapping.size} nodes`)
 
 		// 2. Load settings from IndexedDB
 		const savedSettings = await getBIMSettings(modelKey)
 
 		if (savedSettings) {
 			this._settings = savedSettings
-			console.log(`[BIMSettings] Loaded settings for model: ${modelKey}`)
 		} else {
 			// Create new settings
 			this._settings = {
@@ -77,7 +75,6 @@ class BIMSettingsStore {
 				updatedAt: new Date().toISOString(),
 				nodeOverrides: {}
 			}
-			console.log(`[BIMSettings] Created new settings for model: ${modelKey}`)
 		}
 
 		// 3. Generate enhanced tree data

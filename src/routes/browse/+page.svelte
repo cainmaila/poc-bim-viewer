@@ -1,7 +1,7 @@
 <script lang="ts">
 	import BIMViewer from '$lib/components/BIMViewer.svelte'
-	import Sidebar from '$lib/components/Sidebar.svelte'
-	import PropertyPanel from '$lib/components/PropertyPanel.svelte'
+	import BrowseSidebar from '$lib/components/BrowseSidebar.svelte'
+	import BrowsePropertyPanel from '$lib/components/BrowsePropertyPanel.svelte'
 	import SettingsMenu from '$lib/components/SettingsMenu.svelte'
 	import LoadingOverlay from '$lib/components/LoadingOverlay.svelte'
 	import * as Alert from '$lib/components/ui/alert'
@@ -9,90 +9,50 @@
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { settingsStore } from '$lib/stores/settings.svelte'
 	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
+	import { onMount } from 'svelte'
 	import { getActiveModelKey, getModelFromCache } from '$lib/utils/database'
-	import { Box, TriangleAlert, RefreshCw, Eye } from 'lucide-svelte'
+	import { Box, TriangleAlert, RefreshCw, Edit3 } from 'lucide-svelte'
 	import { goto } from '$app/navigation'
 	import { resolve } from '$app/paths'
 
-	let isDragOver = $state(false)
 	let viewerRef = $state<ReturnType<typeof BIMViewer>>()
 	let showFPSNotification = $state(false)
 	let needsReload = $state(false)
 
-	// 使用 $effect 取代 onMount 以符合 Svelte 5 最佳實踐
-	$effect(() => {
-		// 非同步初始化邏輯
-		const init = async () => {
-			try {
-				const activeKey = await getActiveModelKey()
-				if (activeKey) {
-					const cachedData = await getModelFromCache(activeKey)
-					if (cachedData) {
-						// 從緩存載入模型
-						await modelStore.loadModelFromCache(activeKey)
-					}
+	onMount(async () => {
+		try {
+			const activeKey = await getActiveModelKey()
+			if (activeKey) {
+				const cachedData = await getModelFromCache(activeKey)
+				if (cachedData) {
+					// 從緩存載入模型
+					await modelStore.loadModelFromCache(activeKey)
 				}
-
-				// 監聽 FPS 模式變化
-				const eventBus = viewerRef?.getEventBus()
-				if (eventBus) {
-					eventBus.on('fps:modeChanged', (data: { enabled: boolean }) => {
-						// 同步更新 settingsStore（如果 FPS 模式是從其他地方觸發的）
-						settingsStore.fpsMode = data.enabled
-
-						// 進入 FPS 模式時顯示提示
-						if (data.enabled) {
-							showFPSNotification = true
-							// 3 秒後自動隱藏
-							setTimeout(() => {
-								showFPSNotification = false
-							}, 3000)
-						}
-					})
-				}
-			} catch (error) {
-				console.error('[App] Initialization error:', error)
-				modelStore.error =
-					error instanceof Error ? `初始化失敗: ${error.message}` : '初始化失敗，請重新整理頁面'
 			}
-		}
 
-		init()
+			// 監聽 FPS 模式變化
+			const eventBus = viewerRef?.getEventBus()
+			if (eventBus) {
+				eventBus.on('fps:modeChanged', (data: { enabled: boolean }) => {
+					// 同步更新 settingsStore（如果 FPS 模式是從其他地方觸發的）
+					settingsStore.fpsMode = data.enabled
+
+					// 進入 FPS 模式時顯示提示
+					if (data.enabled) {
+						showFPSNotification = true
+						// 3 秒後自動隱藏
+						setTimeout(() => {
+							showFPSNotification = false
+						}, 3000)
+					}
+				})
+			}
+		} catch (error) {
+			console.error('[Browse] Initialization error:', error)
+			modelStore.error =
+				error instanceof Error ? `初始化失敗: ${error.message}` : '初始化失敗，請重新整理頁面'
+		}
 	})
-
-	function handleDragOver(e: DragEvent) {
-		e.preventDefault()
-		isDragOver = true
-	}
-
-	function handleDragLeave() {
-		isDragOver = false
-	}
-
-	async function handleDrop(e: DragEvent) {
-		e.preventDefault()
-		isDragOver = false
-
-		const files = e.dataTransfer?.files
-		if (!files || files.length === 0) return
-
-		const file = files[0]
-		if (!file.name.toLowerCase().endsWith('.glb')) {
-			modelStore.clearError()
-			// 設定臨時錯誤
-			modelStore.error = '檔案格式錯誤,請使用 .glb 模型'
-			return
-		}
-
-		if (file.size > 1024 * 1024 * 1024) {
-			modelStore.clearError()
-			// 設定臨時錯誤
-			modelStore.error = '模型過大，建議處理素材(>1GB)'
-			return
-		}
-
-		await modelStore.loadModelFromFile(file)
-	}
 
 	function handleSelect(id: string) {
 		viewerRef?.flyTo(id)
@@ -104,18 +64,15 @@
 		viewerRef?.clearSelection()
 	}
 
-	function handleSwitchToBrowse() {
-		goto(resolve('/browse'))
+	function handleSwitchToEdit() {
+		goto(resolve('/'))
 	}
 </script>
 
 <div
 	class="fixed inset-0 overflow-hidden bg-background"
-	ondragover={handleDragOver}
-	ondragleave={handleDragLeave}
-	ondrop={handleDrop}
 	role="region"
-	aria-label="BIM Viewer"
+	aria-label="BIM Viewer - Browse Mode"
 >
 	<div class="absolute inset-0 z-0">
 		<BIMViewer bind:this={viewerRef} autoRotate={false} />
@@ -126,7 +83,13 @@
 				>
 					<Box size={64} class="mb-6 text-muted-foreground opacity-80" />
 					<h3 class="mb-3 text-2xl font-semibold text-foreground">尚未載入模型</h3>
-					<p class="m-0 leading-relaxed text-muted-foreground">請將 .glb 檔案拖曳至此處開始</p>
+					<p class="m-0 mb-6 leading-relaxed text-muted-foreground">
+						請切換至編輯模式載入 .glb 檔案
+					</p>
+					<Button.Button onclick={handleSwitchToEdit} class="gap-2">
+						<Edit3 size={16} />
+						切換至編輯模式
+					</Button.Button>
 				</div>
 			</div>
 		{/if}
@@ -134,28 +97,26 @@
 
 	{#if !settingsStore.fpsMode}
 		<div class="pointer-events-none absolute bottom-0 left-0 top-0 z-10 flex">
-			<Sidebar onSelect={handleSelect} />
+			<BrowseSidebar onSelect={handleSelect} />
 		</div>
 
 		<div class="pointer-events-none absolute bottom-0 right-0 top-0 z-10 flex">
-			<PropertyPanel onClearSelection={handleClearSelection} />
+			<BrowsePropertyPanel onClearSelection={handleClearSelection} />
 		</div>
 
 		<SettingsMenu bind:needsReload />
 
-		<!-- 切換到瀏覽模式按鈕 -->
-		{#if modelStore.model}
-			<div class="pointer-events-none absolute left-0 right-0 top-4 z-[90] flex justify-center">
-				<Button.Button
-					onclick={handleSwitchToBrowse}
-					variant="outline"
-					class="pointer-events-auto gap-2 border-primary/30 bg-card/90 shadow-lg backdrop-blur-sm hover:bg-card"
-				>
-					<Eye size={16} />
-					切換至瀏覽模式
-				</Button.Button>
-			</div>
-		{/if}
+		<!-- 切換到編輯模式按鈕 -->
+		<div class="pointer-events-none absolute left-0 right-0 top-4 z-[90] flex justify-center">
+			<Button.Button
+				onclick={handleSwitchToEdit}
+				variant="outline"
+				class="pointer-events-auto gap-2 border-primary/30 bg-card/90 shadow-lg backdrop-blur-sm hover:bg-card"
+			>
+				<Edit3 size={16} />
+				切換至編輯模式
+			</Button.Button>
+		</div>
 	{/if}
 
 	{#if showFPSNotification}
@@ -175,16 +136,6 @@
 			>
 				<RefreshCw size={20} class="animate-spin" style="animation-duration: 3s" />
 				<span class="font-medium">設定已變更，請重新整理頁面以套用</span>
-			</div>
-		</div>
-	{/if}
-
-	{#if isDragOver}
-		<div
-			class="pointer-events-none absolute inset-0 z-[9000] flex items-center justify-center border-4 border-dashed border-primary bg-primary/40 backdrop-blur-sm"
-		>
-			<div class="rounded-full bg-white px-8 py-4 font-semibold text-primary shadow-lg">
-				請在此處放開以載入模型
 			</div>
 		</div>
 	{/if}

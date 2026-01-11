@@ -13,6 +13,14 @@
 export type NodePath = string
 
 /**
+ * Menu display mode for browse mode
+ * - "root": This node becomes the root in browse mode (ancestors are hidden)
+ * - "disabled": This node and all its children are hidden in browse mode
+ * - "hide": Only this node is hidden, but children are shown in browse mode
+ */
+export type MenuMode = 'root' | 'disabled' | 'hide'
+
+/**
  * Overridable node properties
  */
 export interface NodeOverrides {
@@ -24,6 +32,9 @@ export interface NodeOverrides {
 
 	/** Custom properties (key-value pairs) */
 	properties?: Record<string, string>
+
+	/** Menu display mode for browse mode */
+	menu?: MenuMode
 
 	// Reserved for future expansion:
 	// color?: string
@@ -78,6 +89,9 @@ export interface EnhancedTreeItem {
 
 	/** Custom properties */
 	properties: Record<string, string>
+
+	/** Menu mode for browse mode */
+	menu?: MenuMode
 
 	/** Whether this node has any overrides */
 	hasOverrides: boolean

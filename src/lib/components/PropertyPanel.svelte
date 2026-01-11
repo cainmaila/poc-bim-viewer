@@ -34,6 +34,7 @@
 		path: string
 		type: string
 		properties: Record<string, string>
+		menu?: 'root' | 'disabled' | 'hide'
 		children?: TreeNode[]
 	}
 
@@ -71,6 +72,7 @@
 	let formProperties = $state<Record<string, string>>({})
 	// 用於追蹤每個屬性的類型 (string, number, boolean)
 	let formPropertyTypes = $state<Record<string, PropertyType>>({})
+	let formMenu = $state<'root' | 'disabled' | 'hide' | undefined>(undefined)
 
 	// 新增屬性狀態
 	let isAddingProperty = $state(false)
@@ -113,6 +115,9 @@
 	$effect(() => {
 		const bodyElement = document.body
 		if (selectedNode) {
+			formName = selectedNode.displayName
+			formVisible = selectedNode.visible
+			formMenu = selectedNode.menu
 			bodyElement.classList.add('property-panel-open')
 			return () => bodyElement.classList.remove('property-panel-open')
 		} else {
@@ -217,6 +222,11 @@
 			overrides.properties = formProperties
 		}
 
+		// 處理 menu 覆寫
+		if (formMenu !== undefined) {
+			overrides.menu = formMenu
+		}
+
 		// 先刪除舊的覆寫，然後設置新的（如果有）
 		// 這樣可以確保舊的屬性不會殘留
 		await bimSettingsStore.removeNodeOverride(selectedNode.path)
@@ -292,6 +302,23 @@
 							{/if}
 						</button>
 					</div>
+				</div>
+
+				<!-- Menu Mode 選擇 -->
+				<div class="space-y-3 border-t border-border pt-4">
+					<div class="text-sm font-medium text-foreground">瀏覽模式選單</div>
+					<div class="flex items-center gap-2">
+						<select
+							bind:value={formMenu}
+							class="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+						>
+							<option value={undefined}>預設（跟隨父層）</option>
+							<option value="root">根目錄</option>
+							<option value="disabled">停用</option>
+							<option value="hide">隱藏</option>
+						</select>
+					</div>
+					<p class="text-xs text-muted-foreground">控制此節點在瀏覽模式中的選單顯示行為</p>
 				</div>
 
 				<!-- 自定義屬性 -->
@@ -481,22 +508,38 @@
 							</Button.Button>
 						{/if}
 					</div>
-				</div>
+					=======
+					<!-- Menu 模式選擇 -->
+					<div class="space-y-2">
+						<div class="text-sm font-medium text-foreground">瀏覽模式顯示</div>
+						<select
+							bind:value={formMenu}
+							class="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus:border-ring focus:outline-none focus:ring-2 focus:ring-ring/50"
+						>
+							<option value={undefined}>預設（正常顯示）</option>
+							<option value="root">設為根節點</option>
+							<option value="hide">隱藏此節點（保留子節點）</option>
+							<option value="disabled">隱藏此節點及子節點</option>
+						</select>
+						<div class="text-xs text-muted-foreground">控制此節點在瀏覽模式中的顯示方式</div>
+						>>>>>>> copilot/add-viewer-browsing-mode
+					</div>
 
-				<!-- 節點路徑 (調試用，可選) -->
-				<div class="rounded-md bg-muted/30 p-3">
-					<div class="text-xs text-muted-foreground">節點路徑</div>
-					<div class="mt-1 break-all font-mono text-xs text-muted-foreground">
-						{selectedNode.path}
+					<!-- 節點路徑 (調試用，可選) -->
+					<div class="rounded-md bg-muted/30 p-3">
+						<div class="text-xs text-muted-foreground">節點路徑</div>
+						<div class="mt-1 break-all font-mono text-xs text-muted-foreground">
+							{selectedNode.path}
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
 
-		<!-- 操作按鈕 -->
-		<div class="flex gap-2 border-t border-border p-4">
-			<Button.Button variant="outline" class="flex-1" onclick={handleCancel}>取消</Button.Button>
-			<Button.Button variant="default" class="flex-1" onclick={handleSave}>修改</Button.Button>
+			<!-- 操作按鈕 -->
+			<div class="flex gap-2 border-t border-border p-4">
+				<Button.Button variant="outline" class="flex-1" onclick={handleCancel}>取消</Button.Button>
+				<Button.Button variant="default" class="flex-1" onclick={handleSave}>修改</Button.Button>
+			</div>
 		</div>
 	</aside>
 {/if}
