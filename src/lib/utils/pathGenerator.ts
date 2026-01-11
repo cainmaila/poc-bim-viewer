@@ -1,46 +1,46 @@
 /**
- * Path Generation Utilities for BIM Nodes
+ * BIM 節點路徑產生工具
  *
- * Generates unique paths for Three.js scene nodes using slash-separated format.
- * Handles duplicate node names by appending indices.
+ * 使用斜線分隔格式為 Three.js 場景節點產生唯一路徑。
+ * 若節點名稱重複，會附加索引以區分。
  *
- * Example paths:
+ * 範例路徑：
  * - 'Scene/Building/Floor1'
- * - 'Scene/Building/Floor1[1]' (duplicate)
+ * - 'Scene/Building/Floor1[1]'（重複）
  */
 
 import type * as THREE from 'three'
 import type { EnhancedTreeItem, NodePath, NodeOverrides } from '$lib/types/bimSettings'
 
 /**
- * Build a complete path mapping for all nodes in the scene
+ * 建立場景中所有節點的完整路徑對應
  *
- * Traverses the scene tree and generates unique paths for each node.
- * Handles duplicate names by appending indices like [0], [1], etc.
+ * 遍歷場景樹，為每個節點產生唯一路徑。
+ * 若名稱重複，會附加索引如 [0]、[1] 等。
  *
- * @param object - Root Three.js Object3D (typically the scene or model root)
- * @returns Map of UUID -> NodePath
+ * @param object - Three.js 根 Object3D（通常為 scene 或模型根節點）
+ * @returns UUID -> NodePath 的 Map
  */
 export function buildPathMapping(object: THREE.Object3D): Map<string, NodePath> {
 	const pathMap = new Map<string, NodePath>()
-	const nameCounters = new Map<string, number>() // Track name counts per parent
+	const nameCounters = new Map<string, number>() // 追蹤每個父層下的名稱計數
 
 	function traverse(node: THREE.Object3D, parentPath: string) {
 		const baseName = node.name || node.type
 
-		// Create a unique key for counting duplicates (parentPath::nodeName)
+		// 建立用於重複計數的唯一鍵（parentPath::nodeName）
 		const counterKey = `${parentPath}::${baseName}`
 		const count = nameCounters.get(counterKey) || 0
 		nameCounters.set(counterKey, count + 1)
 
-		// Generate path (first occurrence has no index, duplicates get [1], [2], etc.)
+		// 產生路徑（首次出現不加索引，重複則加 [1]、[2] 等）
 		const pathPrefix = parentPath ? `${parentPath}/${baseName}` : baseName
 		const finalPath = count > 0 ? `${pathPrefix}[${count}]` : pathPrefix
 
-		// Store mapping
+		// 儲存對應關係
 		pathMap.set(node.uuid, finalPath)
 
-		// Recursively process children
+		// 遞迴處理子節點
 		node.children.forEach((child) => {
 			traverse(child, finalPath)
 		})
@@ -51,15 +51,15 @@ export function buildPathMapping(object: THREE.Object3D): Map<string, NodePath> 
 }
 
 /**
- * Generate enhanced tree data with paths and override information
+ * 產生包含路徑與覆寫資訊的強化樹狀資料
  *
- * Converts Three.js scene graph into EnhancedTreeItem structure,
- * merging original properties with overrides.
+ * 將 Three.js 場景圖轉換為 `EnhancedTreeItem` 結構，
+ * 並將原始屬性與覆寫設定合併。
  *
- * @param object - Root Three.js Object3D
- * @param pathMap - UUID to NodePath mapping
- * @param overrides - Node overrides to apply
- * @returns Array of EnhancedTreeItem
+ * @param object - 根 Three.js Object3D
+ * @param pathMap - UUID -> NodePath 的對應
+ * @param overrides - 要套用的節點覆寫設定
+ * @returns `EnhancedTreeItem` 陣列
  */
 export function generateEnhancedTreeData(
 	object: THREE.Object3D,
@@ -91,11 +91,11 @@ export function generateEnhancedTreeData(
 }
 
 /**
- * Get the path for a specific UUID
+ * 取得特定 UUID 的路徑
  *
- * @param uuid - Three.js object UUID
- * @param pathMap - UUID to NodePath mapping
- * @returns NodePath or undefined if not found
+ * @param uuid - Three.js 物件的 UUID
+ * @param pathMap - UUID -> NodePath 的對應
+ * @returns 找到則回傳 NodePath，找不到回傳 undefined
  */
 export function getPathByUUID(uuid: string, pathMap: Map<string, NodePath>): NodePath | undefined {
 	return pathMap.get(uuid)
