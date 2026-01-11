@@ -2,8 +2,20 @@
 	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import * as Button from '$lib/components/ui/button'
-	import { X, Box, FolderOpen } from 'lucide-svelte'
+	import {
+		X,
+		Box,
+		FolderOpen,
+		Type,
+		Hash,
+		ToggleLeft,
+		ToggleRight,
+		CheckCircle2,
+		XCircle,
+		AlertCircle
+	} from 'lucide-svelte'
 	import { fly } from 'svelte/transition'
+	import { inferType } from '$lib/utils/typeHelpers'
 
 	interface TreeNode {
 		id: string
@@ -52,7 +64,7 @@
 
 {#if selectedNode}
 	<aside
-		class="pointer-events-auto fixed right-0 top-0 z-[110] flex h-full w-[350px] flex-col border-l border-border bg-gradient-to-br from-card via-card to-card/95 shadow-[-4px_0_24px_rgba(0,0,0,0.15)] backdrop-blur-sm"
+		class="pointer-events-auto fixed right-0 top-0 z-[110] flex h-full w-[360px] flex-col border-l border-border bg-gradient-to-br from-card via-card to-card/95 shadow-[-4px_0_24px_rgba(0,0,0,0.15)] backdrop-blur-sm"
 		transition:fly={{ x: 300, duration: 250 }}
 	>
 		<!-- 標題列 -->
@@ -79,29 +91,131 @@
 
 		<!-- 內容區域 -->
 		<div class="flex-1 overflow-y-auto p-5">
-			<div class="space-y-5">
+			<div class="space-y-6">
 				<!-- 節點名稱 -->
 				<div
-					class="rounded-lg border border-border/50 bg-gradient-to-br from-primary/5 to-transparent p-4 shadow-sm"
+					class="relative overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-primary/10 via-background to-transparent p-5 shadow-sm"
 				>
-					<div class="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-						名稱
+					<div
+						class="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-primary/80"
+					>
+						<Box size={14} />
+						Node Name
 					</div>
-					<div class="text-lg font-semibold text-foreground">{selectedNode.displayName}</div>
+					<div class="text-xl font-bold tracking-tight text-foreground">
+						{selectedNode.displayName}
+					</div>
+					<!-- 裝飾背景 -->
+					<div
+						class="absolute -bottom-6 -right-6 h-24 w-24 rounded-full bg-primary/5 blur-2xl"
+					></div>
 				</div>
 
 				<!-- 自定義屬性 -->
 				{#if selectedNode.properties && Object.keys(selectedNode.properties).length > 0}
-					<div class="rounded-lg border border-border/50 bg-background/50 p-4 shadow-sm">
-						<div class="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-							屬性
+					<div class="space-y-3">
+						<div
+							class="flex items-center gap-2 px-1 text-xs font-bold uppercase tracking-widest text-muted-foreground"
+						>
+							<AlertCircle size={14} />
+							Custom Properties
 						</div>
-						<div class="space-y-2">
+
+						<div class="grid grid-cols-1 gap-3">
 							{#each Object.entries(selectedNode.properties) as [key, value] (key)}
-								<div class="flex flex-col gap-1 rounded-md bg-muted/30 p-2 text-sm">
-									<span class="font-medium text-foreground">{key}</span>
-									<span class="break-all text-muted-foreground">{value}</span>
-								</div>
+								{@const type = inferType(value)}
+
+								<!-- String Card -->
+								{#if type === 'string'}
+									<div
+										class="group relative overflow-hidden rounded-lg border border-border/50 bg-card p-3 shadow-sm transition-all hover:border-primary/30 hover:shadow-md"
+									>
+										<div
+											class="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground"
+										>
+											<Type size={14} class="text-blue-500" />
+											{key}
+										</div>
+										<div class="pl-6 text-sm font-medium leading-relaxed text-foreground/90">
+											{value}
+										</div>
+										<div
+											class="absolute inset-y-0 left-0 w-1 bg-blue-500/10 transition-colors group-hover:bg-blue-500"
+										></div>
+									</div>
+
+									<!-- Number Card -->
+								{:else if type === 'number'}
+									<div
+										class="group relative overflow-hidden rounded-lg border border-border/50 bg-card p-3 shadow-sm transition-all hover:border-primary/30 hover:shadow-md"
+									>
+										<div class="flex items-center justify-between">
+											<div
+												class="flex items-center gap-2 text-xs font-medium text-muted-foreground"
+											>
+												<Hash size={14} class="text-amber-500" />
+												{key}
+											</div>
+											<div
+												class="font-mono text-lg font-bold tracking-tight text-amber-600 dark:text-amber-400"
+											>
+												{value}
+											</div>
+										</div>
+										<div
+											class="absolute inset-y-0 left-0 w-1 bg-amber-500/10 transition-colors group-hover:bg-amber-500"
+										></div>
+									</div>
+
+									<!-- Boolean Card -->
+								{:else if type === 'boolean'}
+									{@const isTrue = String(value).toLowerCase() === 'true'}
+									<div
+										class="group relative overflow-hidden rounded-lg border border-border/50 bg-card p-3 shadow-sm transition-all hover:border-primary/30 hover:shadow-md"
+									>
+										<div class="flex items-center justify-between">
+											<div
+												class="flex items-center gap-2 text-xs font-medium text-muted-foreground"
+											>
+												{#if isTrue}
+													<ToggleRight size={14} class="text-emerald-500" />
+												{:else}
+													<ToggleLeft size={14} class="text-rose-500" />
+												{/if}
+												{key}
+											</div>
+											<div class="flex items-center gap-1.5">
+												{#if isTrue}
+													<span
+														class="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-bold uppercase text-emerald-600 dark:text-emerald-400"
+													>
+														<CheckCircle2 size={12} />
+														Active
+													</span>
+												{:else}
+													<span
+														class="inline-flex items-center gap-1 rounded-full bg-rose-500/10 px-2 py-0.5 text-xs font-bold uppercase text-rose-600 dark:text-rose-400"
+													>
+														<XCircle size={12} />
+														Inactive
+													</span>
+												{/if}
+											</div>
+										</div>
+										<div
+											class="absolute inset-y-0 left-0 w-1 transition-colors"
+											class:bg-emerald-500={isTrue}
+											class:bg-rose-500={!isTrue}
+											class:group-hover:bg-emerald-600={isTrue}
+											class:group-hover:bg-rose-600={!isTrue}
+										></div>
+										<div
+											class="absolute inset-y-0 left-0 w-1 opacity-20"
+											class:bg-emerald-500={isTrue}
+											class:bg-rose-500={!isTrue}
+										></div>
+									</div>
+								{/if}
 							{/each}
 						</div>
 					</div>

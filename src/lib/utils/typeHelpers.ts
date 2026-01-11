@@ -9,11 +9,17 @@ export type PropertyType = 'string' | 'number' | 'boolean'
  * @param value - 要推斷的值
  * @returns 推斷出的類型
  */
-export function inferType(value: string): PropertyType {
-	if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') {
+export function inferType(value: unknown): PropertyType {
+	if (value === null || value === undefined) {
+		return 'string'
+	}
+
+	const stringValue = String(value)
+
+	if (stringValue.toLowerCase() === 'true' || stringValue.toLowerCase() === 'false') {
 		return 'boolean'
 	}
-	if (!isNaN(Number(value)) && value.trim() !== '') {
+	if (!isNaN(Number(stringValue)) && stringValue.trim() !== '') {
 		return 'number'
 	}
 	return 'string'
