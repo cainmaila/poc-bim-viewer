@@ -9,7 +9,7 @@
 	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import { PluginManager, CameraPlugin, FPSControlsPlugin } from '$lib/plugins'
 	import { CinematicLightingManager } from '$lib/utils/cinematicLightingManager'
-	import { base } from '$app/paths'
+	import { asset } from '$app/paths'
 
 	interface Props {
 		autoRotate?: boolean
@@ -224,7 +224,7 @@
 			})
 
 			// 加載 HDRI 環境貼圖
-			const hdriPath = `${base}/dancing_hall_1k.hdr`
+			const hdriPath = asset('/dancing_hall_1k.hdr')
 			cinematicLightingManager.loadHDRIEnvironment(hdriPath).catch((err) => {
 				console.warn('HDRI 環境貼圖加載失敗:', err)
 				// 即使 HDRI 加載失敗也繼續運行，使用基本照明

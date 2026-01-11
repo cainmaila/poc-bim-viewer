@@ -1,6 +1,6 @@
 import { DRACOLoader } from 'three/examples/jsm/loaders/DRACOLoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { base } from '$app/paths'
+import { asset } from '$app/paths'
 
 /**
  * 全局 Draco 載入器實例（Singleton）
@@ -16,8 +16,8 @@ let globalDracoLoader: DRACOLoader | null = null
 function getOrCreateDracoLoader(): DRACOLoader {
 	if (!globalDracoLoader) {
 		globalDracoLoader = new DRACOLoader()
-		// 基於 PUBLIC_BASE_PATH 組建正確的相對路徑
-		const decoderPath = `${base}/draco/gltf/`
+		// 使用 asset() 解析靜態資產路徑，會正確添加 base path
+		const decoderPath = asset('/draco/gltf/')
 		globalDracoLoader.setDecoderPath(decoderPath)
 		globalDracoLoader.setDecoderConfig({ type: 'wasm' }) // 使用 WASM 獲得更好效能
 	}
