@@ -209,14 +209,16 @@ class BIMSettingsStore {
 			const importedData = validation.data!
 
 			// Completely replace settings (允許跨模型匯入)
-			this._settings = importedData.settings
-
-			// 更新為當前模型的 key 和時間戳
-			this._settings.modelKey = currentModelKey
-			this._settings.updatedAt = new Date().toISOString()
+			// Update model key and timestamp
+			const updatedSettings: BIMSettings = {
+				...importedData.settings,
+				modelKey: currentModelKey,
+				updatedAt: new Date().toISOString()
+			}
+			this._settings = updatedSettings
 
 			// Save to IndexedDB (convert to plain object using $state.snapshot)
-			await saveBIMSettings(currentModelKey, $state.snapshot(this._settings))
+			await saveBIMSettings(currentModelKey, $state.snapshot(updatedSettings))
 
 			// 重新生成 tree data（會自動過濾不存在的 path）
 			if (this._sceneRoot) {

@@ -8,12 +8,19 @@
 import { z } from 'zod'
 
 /**
+ * Schema for MenuMode enum
+ */
+export const MenuModeSchema = z.enum(['root', 'disabled', 'hide'])
+
+/**
  * Schema for node property overrides
  */
 export const NodeOverridesSchema = z
 	.object({
 		displayName: z.string().optional(),
-		visible: z.boolean().optional()
+		visible: z.boolean().optional(),
+		properties: z.record(z.string(), z.string()).optional(),
+		menu: MenuModeSchema.optional()
 	})
 	.strict() // Strict mode: reject unknown fields
 
