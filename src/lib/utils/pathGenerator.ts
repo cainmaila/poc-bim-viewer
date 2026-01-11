@@ -80,6 +80,7 @@ export function generateEnhancedTreeData(
 			displayName: override?.displayName ?? originalName,
 			type: child.type,
 			visible: override?.visible ?? child.visible,
+			menu: override?.menu,
 			hasOverrides: !!override && Object.keys(override).length > 0,
 			children: generateEnhancedTreeData(child, pathMap, overrides)
 		}
