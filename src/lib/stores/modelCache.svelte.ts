@@ -10,7 +10,7 @@ import {
 import { bimSettingsStore } from './bimSettings.svelte'
 
 /**
- * Tree item structure for sidebar navigation
+ * 側邊欄導覽用的樹狀項目結構
  */
 export interface TreeItem {
 	id: string
@@ -20,7 +20,7 @@ export interface TreeItem {
 }
 
 /**
- * Model cache state using Svelte 5 Runes
+ * 模型快取狀態（使用 Svelte 5 Runes）
  */
 class ModelCacheStore {
 	// Reactive state variables using $state
@@ -61,8 +61,8 @@ class ModelCacheStore {
 	}
 
 	/**
-	 * Load a GLB model from URL (with caching)
-	 * @param url - The URL of the GLB file to load
+	 * 從 URL 載入 GLB 模型（含快取機制）
+	 * @param url - GLB 檔案的 URL
 	 */
 	async loadModel(url: string): Promise<void> {
 		this._isLoading = true
@@ -104,8 +104,8 @@ class ModelCacheStore {
 	}
 
 	/**
-	 * Load a GLB model from a local file
-	 * @param file - The file object
+	 * 從本機檔案載入 GLB 模型
+	 * @param file - 檔案物件
 	 */
 	async loadModelFromFile(file: File): Promise<void> {
 		this._isLoading = true
@@ -145,8 +145,8 @@ class ModelCacheStore {
 	}
 
 	/**
-	 * Load a GLB model from IndexedDB cache by key
-	 * @param cacheKey - The cache key
+	 * 從 IndexedDB 快取以 key 載入 GLB 模型
+	 * @param cacheKey - 快取鍵
 	 */
 	async loadModelFromCache(cacheKey: string): Promise<void> {
 		this._isLoading = true
@@ -192,7 +192,7 @@ class ModelCacheStore {
 	}
 
 	/**
-	 * Clear the currently loaded model and reset state
+	 * 清除目前載入的模型並重置狀態
 	 */
 	clearModel(): void {
 		// Dispose of Three.js resources
@@ -229,9 +229,9 @@ class ModelCacheStore {
 	}
 
 	/**
-	 * Generate hierarchical tree data from Three.js model
-	 * @param object - The root object
-	 * @returns Array of tree items
+	 * 從 Three.js 模型生成階層化樹狀資料
+	 * @param object - 根物件
+	 * @returns 樹狀項目陣列
 	 */
 	private generateTreeData(object: THREE.Object3D): TreeItem[] {
 		const items: TreeItem[] = []
@@ -250,14 +250,14 @@ class ModelCacheStore {
 	}
 
 	/**
-	 * Reset error state
+	 * 重置錯誤狀態
 	 */
 	clearError(): void {
 		this._error = null
 	}
 
 	/**
-	 * Unload the current model, clear cache, and reload the page
+	 * 卸載目前模型，清除快取，並重新載入頁面
 	 */
 	async unloadModel(): Promise<void> {
 		// Get active model key before clearing

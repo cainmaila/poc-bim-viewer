@@ -1,8 +1,8 @@
 /**
- * BIM Settings Store
+ * BIM 設定 Store
  *
- * Manages BIM property overrides for the loaded model.
- * Uses Svelte 5 Runes for reactive state management.
+ * 管理已載入模型的 BIM 屬性覆寫。
+ * 使用 Svelte 5 Runes 進行響應式狀態管理。
  */
 
 import type * as THREE from 'three'
@@ -18,7 +18,7 @@ import { buildPathMapping, generateEnhancedTreeData } from '$lib/utils/pathGener
 import { validateBIMSettingsImport } from '$lib/schemas/bimSettings'
 
 /**
- * BIM Settings管理 Store (Svelte 5 Runes)
+ * BIM Settings 管理 Store（Svelte 5 Runes）
  */
 class BIMSettingsStore {
 	// Current settings (reactive)
@@ -47,13 +47,13 @@ class BIMSettingsStore {
 	}
 
 	/**
-	 * Initialize BIM settings for a model
+	 * 初始化指定模型的 BIM 設定
 	 *
-	 * Builds path mapping, loads settings from IndexedDB (or creates new),
-	 * and generates enhanced tree data.
+	 * 建立路徑對應、從 IndexedDB 載入（或建立新設定），
+	 * 並生成加強的樹狀資料。
 	 *
-	 * @param modelKey - Model identifier (filename)
-	 * @param sceneRoot - Three.js model root node
+	 * @param modelKey - 模型識別鍵（檔名）
+	 * @param sceneRoot - Three.js 模型根節點
 	 */
 	async initForModel(modelKey: string, sceneRoot: THREE.Group): Promise<void> {
 		// Store scene root reference for future updates
@@ -85,10 +85,10 @@ class BIMSettingsStore {
 	}
 
 	/**
-	 * Set or update node override properties
+	 * 設定或更新節點的覆寫屬性
 	 *
-	 * @param path - Node path
-	 * @param overrides - Properties to override
+	 * @param path - 節點路徑
+	 * @param overrides - 要覆寫的屬性
 	 */
 	async setNodeOverride(path: NodePath, overrides: Partial<NodeOverrides>): Promise<void> {
 		if (!this._settings) {
@@ -116,9 +116,9 @@ class BIMSettingsStore {
 	}
 
 	/**
-	 * Remove node override
+	 * 移除節點的覆寫設定
 	 *
-	 * @param path - Node path
+	 * @param path - 節點路徑
 	 */
 	async removeNodeOverride(path: NodePath): Promise<void> {
 		if (!this._settings) return
@@ -132,8 +132,8 @@ class BIMSettingsStore {
 	}
 
 	/**
-	 * Reset all visibility overrides (restore all nodes to visible)
-	 * Keeps other overrides like displayName intact
+	 * 重置所有可見性覆寫（將所有節點還原為可見）
+	 * 其他覆寫（例如 displayName）會保留
 	 */
 	async resetAllVisibility(): Promise<void> {
 		if (!this._settings) return
@@ -165,9 +165,9 @@ class BIMSettingsStore {
 	}
 
 	/**
-	 * Export settings as JSON string
+	 * 匯出設定為 JSON 字串
 	 *
-	 * @returns JSON string of settings
+	 * @returns 設定的 JSON 字串
 	 */
 	exportSettings(): string {
 		if (!this._settings) {
@@ -185,14 +185,14 @@ class BIMSettingsStore {
 	}
 
 	/**
-	 * Import settings from JSON
+	 * 從 JSON 匯入設定
 	 *
-	 * Validates JSON format and checks model key match.
-	 * Completely replaces existing settings.
+	 * 會驗證 JSON 格式並檢查匯入資料，
+	 * 可完整覆蓋現有設定。
 	 *
-	 * @param json - JSON string to import
-	 * @param currentModelKey - Current model key for validation
-	 * @returns Import result
+	 * @param json - 要匯入的 JSON 字串
+	 * @param currentModelKey - 當前模型的 key（用於驗證和存檔）
+	 * @returns 匯入結果
 	 */
 	async importSettings(
 		json: string,
@@ -240,7 +240,7 @@ class BIMSettingsStore {
 	}
 
 	/**
-	 * Clear current settings (memory only)
+	 * 清除目前的記憶體設定（僅記憶體，不刪除 IndexedDB）
 	 */
 	clear(): void {
 		this._settings = null
@@ -251,9 +251,9 @@ class BIMSettingsStore {
 	}
 
 	/**
-	 * Delete settings from IndexedDB and clear memory
+	 * 從 IndexedDB 刪除指定模型的設定並清除記憶體
 	 *
-	 * @param modelKey - Model identifier
+	 * @param modelKey - 模型識別鍵
 	 */
 	async deleteSettings(modelKey: string): Promise<void> {
 		await deleteBIMSettings(modelKey)
@@ -262,19 +262,19 @@ class BIMSettingsStore {
 	}
 
 	/**
-	 * Get node path by UUID
+	 * 以 UUID 取得節點路徑
 	 *
-	 * @param uuid - Three.js object UUID
-	 * @returns Node path or undefined
+	 * @param uuid - Three.js 物件的 UUID
+	 * @returns 節點路徑或 undefined
 	 */
 	getPathByUUID(uuid: string): NodePath | undefined {
 		return this._pathMapping.get(uuid)
 	}
 
 	/**
-	 * Update enhanced tree data (internal)
+	 * 更新加強樹狀資料（內部使用）
 	 *
-	 * @param sceneRoot - Three.js model root node
+	 * @param sceneRoot - Three.js 模型根節點
 	 */
 	private _updateEnhancedTreeData(sceneRoot: THREE.Group): void {
 		if (!this._settings) return

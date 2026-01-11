@@ -1,8 +1,8 @@
 /**
- * Notifications Store
+ * 通知 Store
  *
- * Manages error alert banners using Svelte 5 Runes.
- * Success/info messages are handled by svelte-sonner Toast.
+ * 管理需手動關閉的錯誤警示橫幅（使用 Svelte 5 Runes）。
+ * 成功/資訊類訊息則由 svelte-sonner 的吐司顯示。
  */
 
 interface Notification {
@@ -14,10 +14,10 @@ interface Notification {
 }
 
 /**
- * Notifications Store (Svelte 5 Runes)
+ * Notifications Store（Svelte 5 Runes）
  *
- * Manages error alert banners that persist until manually dismissed.
- * Success toasts are handled directly by svelte-sonner.
+ * 管理直到手動關閉為止的錯誤警示橫幅。
+ * 成功吐司由 svelte-sonner 直接處理。
  */
 export class NotificationsStore {
 	// Reactive error alerts
@@ -28,9 +28,9 @@ export class NotificationsStore {
 	}
 
 	/**
-	 * Add an error alert banner
+	 * 新增錯誤警示橫幅
 	 *
-	 * @param message - Error message to display
+	 * @param message - 要顯示的錯誤訊息
 	 */
 	error(message: string): void {
 		const notification: Notification = {
@@ -48,9 +48,9 @@ export class NotificationsStore {
 	}
 
 	/**
-	 * Dismiss a specific alert banner
+	 * 關閉特定的警示橫幅
 	 *
-	 * @param id - Notification ID to dismiss
+	 * @param id - 要關閉的通知 ID
 	 */
 	dismiss(id: string): void {
 		this._alerts = this._alerts.filter((alert) => alert.id !== id)
@@ -58,7 +58,7 @@ export class NotificationsStore {
 	}
 
 	/**
-	 * Dismiss all alert banners
+	 * 關閉所有警示橫幅
 	 */
 	dismissAll(): void {
 		this._alerts = []
