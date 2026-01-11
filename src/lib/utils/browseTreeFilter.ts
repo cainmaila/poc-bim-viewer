@@ -7,6 +7,7 @@
  * - menu: "root" - This node becomes the new root (ancestors are hidden)
  * - menu: "disabled" - This node and all its children are hidden
  * - menu: "hide" - Only this node is hidden, but children are promoted to parent level
+ * - menu: "device" - This node is a terminal node; it is displayed but its children are not
  */
 
 import type { EnhancedTreeItem } from '$lib/types/bimSettings'
@@ -72,6 +73,12 @@ function processHiddenNodes(items: EnhancedTreeItem[], depth = 0): EnhancedTreeI
 			// Recursively process children and add them to result
 			const processedChildren = processHiddenNodes(item.children, depth + 1)
 			result.push(...processedChildren)
+		} else if (item.menu === 'device') {
+			// Device node - include this node but with no children (terminal node)
+			result.push({
+				...item,
+				children: []
+			})
 		} else {
 			// Normal node - recursively process its children
 			const processedChildren = processHiddenNodes(item.children, depth + 1)

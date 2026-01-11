@@ -17,8 +17,9 @@ export type NodePath = string
  * - "root": This node becomes the root in browse mode (ancestors are hidden)
  * - "disabled": This node and all its children are hidden in browse mode
  * - "hide": Only this node is hidden, but children are shown in browse mode
+ * - "device": This node is a terminal node; it is displayed but its children are not
  */
-export type MenuMode = 'root' | 'disabled' | 'hide'
+export type MenuMode = 'root' | 'disabled' | 'hide' | 'device'
 
 /**
  * Overridable node properties

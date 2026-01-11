@@ -34,7 +34,7 @@
 		path: string
 		type: string
 		properties: Record<string, string>
-		menu?: 'root' | 'disabled' | 'hide'
+		menu?: 'root' | 'disabled' | 'hide' | 'device'
 		children?: TreeNode[]
 	}
 
@@ -72,7 +72,7 @@
 	let formProperties = $state<Record<string, string>>({})
 	// 用於追蹤每個屬性的類型 (string, number, boolean)
 	let formPropertyTypes = $state<Record<string, PropertyType>>({})
-	let formMenu = $state<'root' | 'disabled' | 'hide' | undefined>(undefined)
+	let formMenu = $state<'root' | 'disabled' | 'hide' | 'device' | undefined>(undefined)
 
 	// 新增屬性狀態
 	let isAddingProperty = $state(false)
@@ -316,6 +316,7 @@
 							<option value="root">根目錄</option>
 							<option value="disabled">停用</option>
 							<option value="hide">隱藏</option>
+							<option value="device">設備（終端節點）</option>
 						</select>
 					</div>
 					<p class="text-xs text-muted-foreground">控制此節點在瀏覽模式中的選單顯示行為</p>
@@ -519,6 +520,7 @@
 							<option value="root">設為根節點</option>
 							<option value="hide">隱藏此節點（保留子節點）</option>
 							<option value="disabled">隱藏此節點及子節點</option>
+							<option value="device">設為終端節點（不顯示子節點）</option>
 						</select>
 						<div class="text-xs text-muted-foreground">控制此節點在瀏覽模式中的顯示方式</div>
 					</div>
