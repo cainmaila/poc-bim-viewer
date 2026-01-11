@@ -12,6 +12,7 @@
 		visible: boolean
 		path: string
 		type: string
+		properties: Record<string, string>
 		children?: TreeNode[]
 	}
 
@@ -89,45 +90,24 @@
 					<div class="text-lg font-semibold text-foreground">{selectedNode.displayName}</div>
 				</div>
 
-				<!-- 節點類型 -->
-				<div class="rounded-lg border border-border/50 bg-background/50 p-4 shadow-sm">
-					<div class="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-						類型
+				<!-- 自定義屬性 -->
+				{#if selectedNode.properties && Object.keys(selectedNode.properties).length > 0}
+					<div class="rounded-lg border border-border/50 bg-background/50 p-4 shadow-sm">
+						<div class="mb-3 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+							屬性
+						</div>
+						<div class="space-y-2">
+							{#each Object.entries(selectedNode.properties) as [key, value] (key)}
+								<div class="flex flex-col gap-1 rounded-md bg-muted/30 p-2 text-sm">
+									<span class="font-medium text-foreground">{key}</span>
+									<span class="break-all text-muted-foreground">{value}</span>
+								</div>
+							{/each}
+						</div>
 					</div>
-					<div class="flex items-center gap-2">
-						<span
-							class="inline-flex rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary"
-						>
-							{selectedNode.type}
-						</span>
-					</div>
-				</div>
+				{/if}
 
-				<!-- 可見性狀態 -->
-				<div class="rounded-lg border border-border/50 bg-background/50 p-4 shadow-sm">
-					<div class="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-						可見性
-					</div>
-					<div class="flex items-center gap-2">
-						{#if selectedNode.visible}
-							<span
-								class="inline-flex items-center gap-1.5 rounded-full bg-green-500/10 px-3 py-1 text-sm font-medium text-green-600 dark:text-green-400"
-							>
-								<span class="h-2 w-2 rounded-full bg-green-500"></span>
-								顯示中
-							</span>
-						{:else}
-							<span
-								class="inline-flex items-center gap-1.5 rounded-full bg-gray-500/10 px-3 py-1 text-sm font-medium text-gray-600 dark:text-gray-400"
-							>
-								<span class="h-2 w-2 rounded-full bg-gray-500"></span>
-								已隱藏
-							</span>
-						{/if}
-					</div>
-				</div>
-
-				<!-- 原始名稱（如果與顯示名稱不同） -->
+				<!-- 原始名稱（如果與顯示名稱不同）- 保持隱藏以求簡潔，或者視需要保留 -->
 				{#if selectedNode.originalName !== selectedNode.displayName}
 					<div class="rounded-lg border border-border/50 bg-muted/30 p-4">
 						<div class="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -138,23 +118,6 @@
 						</div>
 					</div>
 				{/if}
-
-				<!-- 節點路徑 -->
-				<div class="rounded-lg border border-border/50 bg-muted/30 p-4">
-					<div class="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-						節點路徑
-					</div>
-					<div class="break-all font-mono text-xs leading-relaxed text-muted-foreground">
-						{selectedNode.path}
-					</div>
-				</div>
-
-				<!-- 瀏覽模式提示 -->
-				<div class="rounded-lg border border-primary/20 bg-primary/5 p-4">
-					<div class="text-xs text-muted-foreground">
-						💡 您目前處於瀏覽模式，無法編輯節點屬性。若需編輯，請切換至編輯模式。
-					</div>
-				</div>
 			</div>
 		</div>
 	</aside>
