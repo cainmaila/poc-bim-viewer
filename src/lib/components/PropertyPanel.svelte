@@ -508,7 +508,6 @@
 							</Button.Button>
 						{/if}
 					</div>
-					=======
 					<!-- Menu 模式選擇 -->
 					<div class="space-y-2">
 						<div class="text-sm font-medium text-foreground">瀏覽模式顯示</div>
@@ -522,7 +521,6 @@
 							<option value="disabled">隱藏此節點及子節點</option>
 						</select>
 						<div class="text-xs text-muted-foreground">控制此節點在瀏覽模式中的顯示方式</div>
-						>>>>>>> copilot/add-viewer-browsing-mode
 					</div>
 
 					<!-- 節點路徑 (調試用，可選) -->
