@@ -1,4 +1,14 @@
 <script lang="ts">
+	/**
+	 * @component BIMSettingsExportButton
+	 *
+	 * BIM 設定匯出按鈕，將當前模型的屬性設定匯出為 JSON 檔案。
+	 *
+	 * @example
+	 * ```svelte
+	 * <BIMSettingsExportButton />
+	 * ```
+	 */
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import { Button } from '$lib/components/ui/button'
 	import { Download } from 'lucide-svelte'

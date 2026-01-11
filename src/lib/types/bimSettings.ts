@@ -22,6 +22,9 @@ export interface NodeOverrides {
 	/** Override visibility */
 	visible?: boolean
 
+	/** Custom properties (key-value pairs) */
+	properties?: Record<string, string>
+
 	// Reserved for future expansion:
 	// color?: string
 	// opacity?: number
@@ -72,6 +75,9 @@ export interface EnhancedTreeItem {
 
 	/** Visibility (potentially overridden) */
 	visible: boolean
+
+	/** Custom properties */
+	properties: Record<string, string>
 
 	/** Whether this node has any overrides */
 	hasOverrides: boolean

@@ -22,10 +22,6 @@ const config = {
 		paths: {
 			// 開發環境使用根路徑，建構時從環境變數讀取
 			base: process.env.PUBLIC_BASE_PATH || ''
-		},
-		// 確保 HDR 等二進位檔案不被處理
-		files: {
-			assets: 'static'
 		}
 	},
 	vitePlugin: {
