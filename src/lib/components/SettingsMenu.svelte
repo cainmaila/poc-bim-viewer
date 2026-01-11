@@ -1,4 +1,22 @@
 <script lang="ts">
+	/**
+	 * @component SettingsMenu
+	 *
+	 * 系統設定選單與操作說明面板。
+	 *
+	 * 功能：
+	 * - 顯示操作說明（滑鼠、鍵盤操作）
+	 * - 切換網格、邊界盒、FPS 模式、電影級燈光等系統設定
+	 * - 控制後期處理效果（Bloom、SSAO、Outline、SMAA）
+	 * - 提供 BIM 設定匯入/匯出功能
+	 * - 卸載模型功能
+	 * - 部分設定需重新整理才生效（顯示覆蓋層提示）
+	 *
+	 * @example
+	 * ```svelte
+	 * <SettingsMenu bind:needsReload />
+	 * ```
+	 */
 	import { settingsStore } from '$lib/stores/settings.svelte'
 	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import { modelStore } from '$lib/stores/modelCache.svelte'

@@ -1,10 +1,30 @@
 <script lang="ts">
+	/**
+	 * @component PropertyPanel
+	 *
+	 * 節點屬性編輯面板，用於檢視與修改 BIM 模型節點的屬性。
+	 *
+	 * 功能：
+	 * - 顯示選中節點的類型、名稱、可見性等資訊
+	 * - 支援修改節點顯示名稱
+	 * - 支援切換節點可見性
+	 * - 支援新增、編輯、刪除自定義屬性
+	 * - 屬性支援字串、數字、布林三種類型
+	 * - 修改後的屬性會持久化到 BIM 設定中
+	 *
+	 * @example
+	 * ```svelte
+	 * <PropertyPanel onClearSelection={handleClearSelection} />
+	 * ```
+	 */
 	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import * as Button from '$lib/components/ui/button'
 	import { X, Eye, EyeOff } from 'lucide-svelte'
 	import { fly } from 'svelte/transition'
 	import { notify } from '$lib/utils/notify'
+	import { inferType } from '$lib/utils/typeHelpers'
+	import type { PropertyType } from '$lib/utils/typeHelpers'
 
 	interface TreeNode {
 		id: string
@@ -50,20 +70,13 @@
 	let formVisible = $state(true)
 	let formProperties = $state<Record<string, string>>({})
 	// 用於追蹤每個屬性的類型 (string, number, boolean)
-	let formPropertyTypes = $state<Record<string, 'string' | 'number' | 'boolean'>>({})
+	let formPropertyTypes = $state<Record<string, PropertyType>>({})
 
 	// 新增屬性狀態
 	let isAddingProperty = $state(false)
 	let newPropKey = $state('')
 	let newPropValue = $state('')
-	let newPropType = $state<'string' | 'number' | 'boolean'>('string')
-
-	// 根據值推斷類型
-	function inferType(value: string): 'string' | 'number' | 'boolean' {
-		if (value.toLowerCase() === 'true' || value.toLowerCase() === 'false') return 'boolean'
-		if (!isNaN(Number(value)) && value.trim() !== '') return 'number'
-		return 'string'
-	}
+	let newPropType = $state<PropertyType>('string')
 
 	// 當選中的節點 ID 變化時，重置表單
 	let previousNodeId: string | null = null
@@ -96,16 +109,14 @@
 		}
 	})
 
-	// 當 PropertyPanel 開啟時，給 body 添加 class 以隱藏 ViewportGizmo
+	// 使用 $effect 管理 body class，優化 DOM 操作
 	$effect(() => {
+		const bodyElement = document.body
 		if (selectedNode) {
-			document.body.classList.add('property-panel-open')
+			bodyElement.classList.add('property-panel-open')
+			return () => bodyElement.classList.remove('property-panel-open')
 		} else {
-			document.body.classList.remove('property-panel-open')
-		}
-
-		return () => {
-			document.body.classList.remove('property-panel-open')
+			bodyElement.classList.remove('property-panel-open')
 		}
 	})
 
@@ -154,7 +165,7 @@
 	}
 
 	// 更新屬性類型
-	function updatePropertyType(key: string, type: 'string' | 'number' | 'boolean') {
+	function updatePropertyType(key: string, type: PropertyType) {
 		formPropertyTypes[key] = type
 
 		// 類型切換時的默認值處理
@@ -183,7 +194,6 @@
 
 	// 修改按鈕
 	async function handleSave() {
-		console.log('[PropertyPanel] handleSave called')
 		if (!selectedNode) return
 
 		const overrides: import('$lib/types/bimSettings').NodeOverrides = {}
@@ -207,23 +217,16 @@
 			overrides.properties = formProperties
 		}
 
-		console.log('[PropertyPanel] Saving overrides:', overrides)
-
 		// 先刪除舊的覆寫，然後設置新的（如果有）
 		// 這樣可以確保舊的屬性不會殘留
-		console.log('[PropertyPanel] Removing old override...')
 		await bimSettingsStore.removeNodeOverride(selectedNode.path)
-		console.log('[PropertyPanel] Old override removed')
 
 		if (Object.keys(overrides).length > 0) {
 			// 如果有新的覆寫，則設置
-			console.log('[PropertyPanel] Setting new override...')
 			await bimSettingsStore.setNodeOverride(selectedNode.path, overrides)
-			console.log('[PropertyPanel] New override set')
 		}
 
 		// 顯示修改成功通知
-		console.log('[PropertyPanel] handleSave complete')
 		notify.success('屬性修改成功')
 
 		// 保存後不關閉視窗，讓用戶可以繼續編輯
@@ -323,10 +326,7 @@
 												class="w-full cursor-pointer bg-transparent text-xs focus:outline-none"
 												value={formPropertyTypes[key] || 'string'}
 												onchange={(e) =>
-													updatePropertyType(
-														key,
-														e.currentTarget.value as 'string' | 'number' | 'boolean'
-													)}
+													updatePropertyType(key, e.currentTarget.value as PropertyType)}
 											>
 												<option value="string">字串</option>
 												<option value="number">數字</option>

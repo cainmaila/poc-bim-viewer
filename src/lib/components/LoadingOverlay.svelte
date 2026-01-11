@@ -1,4 +1,19 @@
 <script lang="ts">
+	/**
+	 * @component LoadingOverlay
+	 *
+	 * 模型載入進度覆蓋層。
+	 *
+	 * 功能：
+	 * - 顯示載入進度百分比
+	 * - 顯示進度條動畫
+	 * - 區分從緩存讀取或網路載入
+	 *
+	 * @example
+	 * ```svelte
+	 * <LoadingOverlay isLoading={true} progress={50} fromCache={false} />
+	 * ```
+	 */
 	import { Progress } from '$lib/components/ui/progress'
 
 	interface Props {

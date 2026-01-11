@@ -1,4 +1,19 @@
 <script lang="ts">
+	/**
+	 * @component BIMSettingsImportButton
+	 *
+	 * BIM 設定匯入按鈕，從 JSON 檔案匯入模型的屬性設定。
+	 *
+	 * 功能：
+	 * - 支援匯入先前匯出的 JSON 設定檔
+	 * - 自動驗證 JSON 格式
+	 * - 支援跨模型匯入（會自動過濾不存在的節點路徑）
+	 *
+	 * @example
+	 * ```svelte
+	 * <BIMSettingsImportButton />
+	 * ```
+	 */
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { getActiveModelKey } from '$lib/utils/database'
