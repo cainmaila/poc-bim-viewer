@@ -11,21 +11,24 @@
 
 import type * as THREE from 'three'
 import type { EnhancedTreeItem, NodePath, NodeOverrides } from '$lib/types/bimSettings'
+import { TimeSlicer } from '$lib/utils/TimeSlicer'
 
 /**
- * 建立場景中所有節點的完整路徑對應
+ * 建立場景中所有節點的完整路徑對應 (Async Version)
  *
  * 遍歷場景樹，為每個節點產生唯一路徑。
  * 若名稱重複，會附加索引如 [0]、[1] 等。
+ * 使用 TimeSlicer 避免阻塞主線程。
  *
  * @param object - Three.js 根 Object3D（通常為 scene 或模型根節點）
  * @returns UUID -> NodePath 的 Map
  */
-export function buildPathMapping(object: THREE.Object3D): Map<string, NodePath> {
+export async function buildPathMapping(object: THREE.Object3D): Promise<Map<string, NodePath>> {
 	const pathMap = new Map<string, NodePath>()
 	const nameCounters = new Map<string, number>() // 追蹤每個父層下的名稱計數
+	const slicer = new TimeSlicer(12) // 初始化 TimeSlicer
 
-	function traverse(node: THREE.Object3D, parentPath: string) {
+	async function traverse(node: THREE.Object3D, parentPath: string) {
 		const baseName = node.name || node.type
 
 		// 建立用於重複計數的唯一鍵（parentPath::nodeName）
@@ -40,13 +43,16 @@ export function buildPathMapping(object: THREE.Object3D): Map<string, NodePath> 
 		// 儲存對應關係
 		pathMap.set(node.uuid, finalPath)
 
+		// 定期檢查時間預算
+		await slicer.check()
+
 		// 遞迴處理子節點
-		node.children.forEach((child) => {
-			traverse(child, finalPath)
-		})
+		for (const child of node.children) {
+			await traverse(child, finalPath)
+		}
 	}
 
-	traverse(object, '')
+	await traverse(object, '')
 	return pathMap
 }
 

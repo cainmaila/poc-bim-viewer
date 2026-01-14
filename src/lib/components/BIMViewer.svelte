@@ -31,6 +31,15 @@
 	import { CinematicLightingManager } from '$lib/utils/cinematicLightingManager'
 	import { asset } from '$app/paths'
 	import { setupDefaultLighting } from '$lib/utils/lightingSetup'
+	import { TimeSlicer } from '$lib/utils/TimeSlicer'
+	import { computeBoundsTree, disposeBoundsTree, acceleratedRaycast } from 'three-mesh-bvh'
+
+	// 設定 BVH 擴充
+	THREE.BufferGeometry.prototype.computeBoundsTree = computeBoundsTree
+	THREE.BufferGeometry.prototype.disposeBoundsTree = disposeBoundsTree
+	THREE.Mesh.prototype.raycast = acceleratedRaycast
+
+	// ... (props to onModelLoaded effect)
 
 	interface Props {
 		autoRotate?: boolean
@@ -511,6 +520,13 @@
 		if (existingModel) {
 			scene.remove(existingModel)
 
+			// 清理舊模型的 BVH 數據
+			existingModel.traverse((child) => {
+				if (child instanceof THREE.Mesh && child.geometry.boundsTree) {
+					child.geometry.disposeBoundsTree()
+				}
+			})
+
 			// 當模型改變時清除選擇（使用統一接口）
 			clearSelection()
 		}
@@ -518,50 +534,80 @@
 		// 添加新模型
 		currentModel.userData.isModel = true
 
-		// 確保所有網格都可以通過名稱搜索，並且存儲了原始材質
-		currentModel.traverse((child) => {
-			if (child instanceof THREE.Mesh) {
-				child.userData.originalMaterial = child.material
-				child.userData.originalOpacity = child.material.opacity
-				child.userData.originalTransparent = child.material.transparent
+		// 異步處理模型遍歷，避免阻塞 UI
+		const processModel = async () => {
+			const slicer = new TimeSlicer(12) // 12ms 預算
 
-				// 確保法線被正確計算（修復小三角形問題）
-				if (child.geometry) {
-					child.geometry.computeVertexNormals()
-					child.geometry.computeBoundingBox()
+			// 使用堆疊模擬遞歸以方便使用 await
+			const stack: THREE.Object3D[] = [currentModel]
+
+			while (stack.length > 0) {
+				await slicer.check()
+				const child = stack.pop()!
+
+				if (child instanceof THREE.Mesh) {
+					child.userData.originalMaterial = child.material
+					child.userData.originalOpacity = child.material.opacity
+					child.userData.originalTransparent = child.material.transparent
+
+					// 確保法線被正確計算（修復小三角形問題）
+					if (child.geometry) {
+						child.geometry.computeVertexNormals()
+						child.geometry.computeBoundingBox()
+
+						// --- BVH 優化 ---
+						// 僅對頂點數較多的幾何體建立 BVH 索引（例如 > 300 頂點）
+						// 對於非常簡單的幾何體，BVH 開銷可能大於收益
+						if (
+							child.geometry.attributes.position &&
+							child.geometry.attributes.position.count > 300
+						) {
+							child.geometry.computeBoundsTree()
+						}
+					}
+
+					// 啟用陰影投射和接收（電影級燈光需要）
+					child.castShadow = true
+					child.receiveShadow = true
+
+					// 確保材質支持雙面渲染（防止背面隱藏）
+					if (child.material instanceof THREE.Material) {
+						child.material.side = THREE.DoubleSide
+						child.material.needsUpdate = true
+					}
 				}
 
-				// 啟用陰影投射和接收（電影級燈光需要）
-				child.castShadow = true
-				child.receiveShadow = true
-
-				// 確保材質支持雙面渲染（防止背面隱藏）
-				if (child.material instanceof THREE.Material) {
-					child.material.side = THREE.DoubleSide
-					child.material.needsUpdate = true
+				if (child.children && child.children.length > 0) {
+					// 將子節點加入堆疊
+					for (let i = 0; i < child.children.length; i++) {
+						stack.push(child.children[i])
+					}
 				}
 			}
-		})
 
-		// 應用電影級材質更新
-		if (cinematicLightingManager) {
-			cinematicLightingManager.updateMaterialsForCinematic()
+			// 應用電影級材質更新
+			if (cinematicLightingManager) {
+				cinematicLightingManager.updateMaterialsForCinematic()
+			}
+
+			// 居中模型
+			const box = new THREE.Box3().setFromObject(currentModel)
+			const center = box.getCenter(new THREE.Vector3())
+			currentModel.position.sub(center)
+
+			scene.add(currentModel)
+
+			// 記錄已渲染的模型
+			renderedModel = currentModel
+
+			// 初始45度等距視圖
+			resetCameraView()
+
+			requestRender() // 模型載入後請求渲染
 		}
 
-		// 居中模型
-		const box = new THREE.Box3().setFromObject(currentModel)
-		const center = box.getCenter(new THREE.Vector3())
-		currentModel.position.sub(center)
-
-		scene.add(currentModel)
-
-		// 記錄已渲染的模型
-		renderedModel = currentModel
-
-		// 初始45度等距視圖
-		resetCameraView()
-
-		requestRender() // 模型載入後請求渲染
+		// 啟動處理
+		processModel()
 	})
 
 	// 效果：監聽 BIM 設定變化並套用可見性覆寫
@@ -577,7 +623,7 @@
 		untrack(() => {
 			const overrides = settings.nodeOverrides
 
-			// 遍歷所有節點套用可見性覆寫
+			// 遍歷所有節點套用可見性覆寫 (這部分暫不異步化，因為通常較快且頻繁)
 			model.traverse((child) => {
 				const path = bimSettingsStore.getPathByUUID(child.uuid)
 				if (!path) return

@@ -60,7 +60,7 @@ class BIMSettingsStore {
 		this._sceneRoot = sceneRoot
 
 		// 1. Build path mapping
-		this._pathMapping = buildPathMapping(sceneRoot)
+		this._pathMapping = await buildPathMapping(sceneRoot)
 
 		// 2. Load settings from IndexedDB
 		const savedSettings = await getBIMSettings(modelKey)
