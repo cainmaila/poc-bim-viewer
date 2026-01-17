@@ -50,7 +50,8 @@
       "mcp__serena__list_memories",
       "mcp__serena__find_file",
       "Bash(ls:*)",
-      "mcp__sequential-thinking__sequentialthinking"
+      "mcp__sequential-thinking__sequentialthinking",
+      "Bash(pnpm i)"
     ]
   }
 }

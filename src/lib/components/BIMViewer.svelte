@@ -618,11 +618,13 @@
 		const model = scene.children.find((child) => child.userData.isModel)
 		if (!model) return
 
-		// 使用 untrack 避免追蹤深層 overrides 變化導致無限循環
-		// 只在 settings 物件本身變化時執行
+		// 追蹤 updatedAt 以監測設定變更（每次 setNodeOverride 都會更新此值）
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const _updatedAt = settings.updatedAt
+
+		// 使用 untrack 避免 traverse 過程中的無限循環
 		untrack(() => {
 			const overrides = settings.nodeOverrides
-
 			// 遍歷所有節點套用可見性覆寫 (這部分暫不異步化，因為通常較快且頻繁)
 			model.traverse((child) => {
 				const path = bimSettingsStore.getPathByUUID(child.uuid)

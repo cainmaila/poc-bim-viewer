@@ -114,7 +114,6 @@ export async function clearCache(): Promise<void> {
 export async function setActiveModelKey(key: string): Promise<void> {
 	try {
 		await db.settings.put({ key: 'activeModelKey', value: key })
-		console.log(`[Database] Active model key set to: ${key}`)
 	} catch (error) {
 		console.error('[Database] Failed to set active model key:', error)
 	}
@@ -143,7 +142,6 @@ export async function getActiveModelKey(): Promise<string | null> {
 export async function saveBIMSettings(modelKey: string, settings: BIMSettings): Promise<void> {
 	try {
 		await db.bimSettings.put(settings)
-		console.log(`[Database] BIM settings saved: ${modelKey}`)
 	} catch (error) {
 		console.error('[Database] Failed to save BIM settings:', error)
 		throw error
@@ -156,12 +154,7 @@ export async function saveBIMSettings(modelKey: string, settings: BIMSettings): 
 export async function getBIMSettings(modelKey: string): Promise<BIMSettings | null> {
 	try {
 		const settings = await db.bimSettings.get(modelKey)
-		if (settings) {
-			console.log(`[Database] BIM settings loaded: ${modelKey}`)
-			return settings
-		}
-		console.log(`[Database] No BIM settings found for: ${modelKey}`)
-		return null
+		return settings ?? null
 	} catch (error) {
 		console.error('[Database] Failed to get BIM settings:', error)
 		return null

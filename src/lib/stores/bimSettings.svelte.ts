@@ -108,8 +108,6 @@ class BIMSettingsStore {
 		if (this._sceneRoot) {
 			this._updateEnhancedTreeData(this._sceneRoot)
 		}
-
-		console.log(`[BIMSettings] Updated overrides for path: ${path}`, overrides)
 	}
 
 	/**
@@ -125,7 +123,6 @@ class BIMSettingsStore {
 
 		// Save to IndexedDB (convert to plain object using Svelte snapshot)
 		await saveBIMSettings(this._settings.modelKey, $state.snapshot(this._settings))
-		console.log(`[BIMSettings] Removed overrides for path: ${path}`)
 	}
 
 	/**
@@ -157,8 +154,6 @@ class BIMSettingsStore {
 		if (this._sceneRoot) {
 			this._updateEnhancedTreeData(this._sceneRoot)
 		}
-
-		console.log('[BIMSettings] Reset all visibility overrides')
 	}
 
 	/**
@@ -225,10 +220,6 @@ class BIMSettingsStore {
 				this._updateEnhancedTreeData(this._sceneRoot)
 			}
 
-			console.log(
-				`[BIMSettings] Imported settings from "${importedData.modelKey}" to "${currentModelKey}". ` +
-					`Unmapped paths will be automatically skipped.`
-			)
 			return { success: true }
 		} catch (e) {
 			return {
@@ -246,7 +237,6 @@ class BIMSettingsStore {
 		this._pathMapping.clear()
 		this._enhancedTreeData = []
 		this._sceneRoot = null
-		console.log('[BIMSettings] Cleared settings from memory')
 	}
 
 	/**
@@ -257,7 +247,6 @@ class BIMSettingsStore {
 	async deleteSettings(modelKey: string): Promise<void> {
 		await deleteBIMSettings(modelKey)
 		this.clear()
-		console.log(`[BIMSettings] Deleted settings for model: ${modelKey}`)
 	}
 
 	/**

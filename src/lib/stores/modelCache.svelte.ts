@@ -133,8 +133,6 @@ class ModelCacheStore {
 			if (this._model) {
 				await bimSettingsStore.initForModel(file.name, this._model)
 			}
-
-			console.log(`[ModelCache] Model loaded from file and cached: ${file.name}`)
 		} catch (e) {
 			const errorMessage = e instanceof Error ? e.message : '解析模型失敗'
 			this._error = errorMessage
@@ -180,8 +178,6 @@ class ModelCacheStore {
 			if (this._model) {
 				await bimSettingsStore.initForModel(cacheKey, this._model)
 			}
-
-			console.log(`[ModelCache] Model loaded from cache: ${cacheKey}`)
 		} catch (e) {
 			const errorMessage = e instanceof Error ? e.message : '從緩存載入模型失敗'
 			this._error = errorMessage
