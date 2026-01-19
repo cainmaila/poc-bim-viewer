@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import type { WebGPURenderer } from 'three/webgpu'
 import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
 
 /**
@@ -51,7 +52,7 @@ export interface CinematicLightingConfig {
 export class CinematicLightingManager {
 	private scene: THREE.Scene
 	private camera: THREE.PerspectiveCamera
-	private renderer: THREE.WebGLRenderer
+	private renderer: WebGPURenderer
 	private config: CinematicLightingConfig
 
 	// 三點照明燈光
@@ -72,7 +73,7 @@ export class CinematicLightingManager {
 	constructor(
 		scene: THREE.Scene,
 		camera: THREE.PerspectiveCamera,
-		renderer: THREE.WebGLRenderer,
+		renderer: WebGPURenderer,
 		config: CinematicLightingConfig = {}
 	) {
 		this.scene = scene
@@ -200,7 +201,10 @@ export class CinematicLightingManager {
 	 */
 	private configureRenderer() {
 		// 禁用動態陰影映射，使用烘培陰影
-		this.renderer.shadowMap.enabled = false
+		// @ts-expect-error - WebGPURenderer might not share exact API with WebGLRenderer
+		if (this.renderer.shadowMap) {
+			this.renderer.shadowMap.enabled = false
+		}
 
 		// 配置色調映射
 		this.renderer.toneMapping = this.config.toneMappingType!
@@ -220,6 +224,7 @@ export class CinematicLightingManager {
 				hdriPath,
 				(texture) => {
 					// 設置環境貼圖
+					// @ts-expect-error - PMREMGenerator expects WebGLRenderer
 					const pmremGenerator = new THREE.PMREMGenerator(this.renderer)
 					const envMap = pmremGenerator.fromEquirectangular(texture).texture
 

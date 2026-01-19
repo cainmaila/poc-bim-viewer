@@ -1,4 +1,5 @@
 import type * as THREE from 'three'
+import type { WebGPURenderer } from 'three/webgpu'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import type { EventBus } from './EventBus'
 import type { IPlugin } from './IPlugin'
@@ -11,7 +12,7 @@ export interface PluginContext {
 	// Three.js 核心對象
 	scene: THREE.Scene
 	camera: THREE.PerspectiveCamera
-	renderer: THREE.WebGLRenderer
+	renderer: WebGPURenderer | THREE.WebGLRenderer
 	controls: OrbitControls
 	canvas: HTMLCanvasElement
 

@@ -18,13 +18,15 @@
 	 * <BIMViewer bind:this={viewerRef} autoRotate={false} />
 	 * ```
 	 */
-	import * as THREE from 'three'
+	// import * as THREE from 'three'
+	import * as THREE from 'three/webgpu' // 或 'three/addons/renderers/webgpu/WebGPURenderer.js'
 	import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 	import { ViewportGizmo } from 'three-viewport-gizmo'
 	import { untrack } from 'svelte'
 	import { modelStore } from '$lib/stores/modelCache.svelte'
 	import { bimSettingsStore } from '$lib/stores/bimSettings.svelte'
-	import { PostProcessingManager } from '$lib/utils/postProcessingManager'
+	// TODO: WebGPU Migration - PostProcessing needs TSL rewrite
+	// import { PostProcessingManager } from '$lib/utils/postProcessingManager'
 	import { settingsStore } from '$lib/stores/settings.svelte'
 	import { viewerControlStore } from '$lib/stores/viewerControl.svelte'
 	import { PluginManager, CameraPlugin, FPSControlsPlugin } from '$lib/plugins'
@@ -50,11 +52,12 @@
 	let canvasRef = $state<HTMLCanvasElement | null>(null)
 	let scene: THREE.Scene
 	let camera: THREE.PerspectiveCamera
-	let renderer: THREE.WebGLRenderer
+	let renderer: THREE.WebGPURenderer
 	let controls: OrbitControls
 	let animationFrameId: number
 	let gridHelper: THREE.GridHelper
-	let postProcessingManager: PostProcessingManager | null = null
+	// TODO: WebGPU Migration - PostProcessing disabled
+	// let postProcessingManager: PostProcessingManager | null = null
 	let pluginManager: PluginManager
 	let cinematicLightingManager: CinematicLightingManager | null = null
 	let viewportGizmo: ViewportGizmo | null = null
@@ -146,7 +149,7 @@
 	}
 
 	// 根據設置初始化燈光系統
-	function initScene() {
+	async function initScene() {
 		if (!canvasRef) return
 
 		// 創建場景
@@ -167,13 +170,16 @@
 		camera.position.set(50, 50, 50)
 
 		// 創建渲染器
-		renderer = new THREE.WebGLRenderer({
+		renderer = new THREE.WebGPURenderer({
 			canvas: canvasRef,
 			antialias: true,
-			alpha: true
+			alpha: true,
+			forceWebGL: true // 先用這測試，逐步遷移
 		})
 		renderer.setSize(canvasRef.clientWidth, canvasRef.clientHeight)
 		renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+		await renderer.init()
 
 		// 創建控制項
 		controls = new OrbitControls(camera, renderer.domElement)
@@ -259,8 +265,11 @@
 		viewportGizmo.addEventListener('change', requestRender)
 
 		// 初始化後期處理管理器（從 settingsStore 讀取配置）
-		const config = settingsStore.postProcessing
-		postProcessingManager = new PostProcessingManager(scene, camera, renderer, config)
+		// TODO: WebGPU 需要重寫 PostProcessing 為 TSL/NodeMaterial
+		// 暫時禁用以避免 ShaderMaterial 不兼容問題
+		// const config = settingsStore.postProcessing
+		// postProcessingManager = new PostProcessingManager(scene, camera, renderer, config)
+		console.warn('[WebGPU Migration] PostProcessing temporarily disabled - requires TSL conversion')
 
 		// 初始化 PluginManager
 		pluginManager = new PluginManager({
@@ -309,9 +318,10 @@
 		renderer.setSize(width, height)
 
 		// 同步更新後期處理解析度
-		if (postProcessingManager) {
-			postProcessingManager.handleResize(width, height)
-		}
+		// TODO: WebGPU Migration - PostProcessing disabled
+		// if (postProcessingManager) {
+		// 	postProcessingManager.handleResize(width, height)
+		// }
 
 		// 調整大小後請求重新渲染
 		requestRender()
@@ -399,8 +409,10 @@
 	// 智能渲染循環 - 按需渲染以降低耗電
 	let lastTime = performance.now()
 	let frameCount = 0
-	function animate() {
-		animationFrameId = requestAnimationFrame(animate)
+	async function animate() {
+		// 移動 requestAnimationFrame 到函數末尾或使用 setAnimationLoop，但在這裡我們維持手動控制
+		// 如果使用 await，建議不隨意並發
+		// 這裡先保持原樣，但在 renderAsync 時小心
 
 		// 計算 deltaTime
 		const currentTime = performance.now()
@@ -411,8 +423,9 @@
 		// 檢查是否需要持續渲染（動畫、WASD、FPS 等）
 		const needsContinuousRender = checkNeedsContinuousRender()
 
-		// 如果不需要渲染且沒有請求，則跳過本幀
+		// 如果不需要渲染且沒有請求，則跳過本幀，但仍需保持循環
 		if (!needsContinuousRender && !renderRequested) {
+			animationFrameId = requestAnimationFrame(animate)
 			return
 		}
 
@@ -442,24 +455,24 @@
 		}
 
 		// 渲染場景
-		if (postProcessingManager) {
-			postProcessingManager.render()
-		} else {
-			renderer.render(scene, camera)
-		}
+		// WebGPU 使用 renderAsync
+		await renderer.renderAsync(scene, camera)
 
 		// 只在需要時渲染 ViewportGizmo（不能在每幀都渲染，會導致卡頓）
 		// ViewportGizmo 會在交互時自動通過事件觸發重新渲染
 		if (viewportGizmo) {
 			viewportGizmo.render()
 		}
+
+		animationFrameId = requestAnimationFrame(animate)
 	}
 
 	// 效果：當canvas準備好時初始化場景
 	$effect(() => {
 		if (canvasRef) {
-			initScene()
-			animate()
+			initScene().then(() => {
+				animate()
+			})
 
 			// 添加鍵盤事件監聽器
 			window.addEventListener('keydown', handleKeyDown)
@@ -486,10 +499,11 @@
 				}
 
 				// 清理後期處理管理器
-				if (postProcessingManager) {
-					postProcessingManager.dispose()
-					postProcessingManager = null
-				}
+				// TODO: WebGPU Migration - PostProcessing disabled
+				// if (postProcessingManager) {
+				// 	postProcessingManager.dispose()
+				// 	postProcessingManager = null
+				// }
 				// 清理 ViewportGizmo
 				if (viewportGizmo) {
 					viewportGizmo.detachControls()
@@ -678,9 +692,10 @@
 			updateBoundingBox()
 
 			// 更新 Outline 目標
-			if (postProcessingManager) {
-				postProcessingManager.setOutlineObjects([target])
-			}
+			// TODO: WebGPU Migration - PostProcessing disabled
+			// if (postProcessingManager) {
+			// 	postProcessingManager.setOutlineObjects([target])
+			// }
 
 			// 使用 CameraPlugin 飛向目標
 			const cameraPlugin = pluginManager?.getPlugin<CameraPlugin>('camera')
@@ -747,9 +762,10 @@
 		updateBoundingBox()
 
 		// 清除 Outline 目標
-		if (postProcessingManager) {
-			postProcessingManager.clearOutlineObjects()
-		}
+		// TODO: WebGPU Migration - PostProcessing disabled
+		// if (postProcessingManager) {
+		// 	postProcessingManager.clearOutlineObjects()
+		// }
 
 		requestRender() // 重置 X射線時請求渲染
 	}

@@ -5,14 +5,18 @@
  */
 
 import * as THREE from 'three'
+import type { WebGPURenderer } from 'three/webgpu'
 
 /**
  * 設置預設燈光系統（簡單的三光源）
  *
  * @param scene - Three.js 場景物件
- * @param renderer - Three.js 渲染器
+ * @param renderer - Three.js 渲染器 (WebGPURenderer or WebGLRenderer)
  */
-export function setupDefaultLighting(scene: THREE.Scene, renderer: THREE.WebGLRenderer): void {
+export function setupDefaultLighting(
+	scene: THREE.Scene,
+	renderer: WebGPURenderer | THREE.WebGLRenderer
+): void {
 	// 主燈（Key Light）- 白色方向光
 	const keyLight = new THREE.DirectionalLight(0xffffff, 1.2)
 	keyLight.position.set(60, 50, 50)

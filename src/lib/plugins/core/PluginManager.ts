@@ -2,12 +2,13 @@ import type { IPlugin } from './IPlugin'
 import type { PluginContext } from './PluginContext'
 import { EventBus } from './EventBus'
 import type * as THREE from 'three'
+import type { WebGPURenderer } from 'three/webgpu'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 export interface PluginManagerConfig {
 	scene: THREE.Scene
 	camera: THREE.PerspectiveCamera
-	renderer: THREE.WebGLRenderer
+	renderer: WebGPURenderer | THREE.WebGLRenderer
 	controls: OrbitControls
 	canvas: HTMLCanvasElement
 }

@@ -51,7 +51,11 @@
       "mcp__serena__find_file",
       "Bash(ls:*)",
       "mcp__sequential-thinking__sequentialthinking",
-      "Bash(pnpm i)"
+      "Bash(pnpm i)",
+      "Bash(bun --version)",
+      "Bash(node scripts/smart-install.js:*)",
+      "Bash(CLAUDE_PLUGIN_ROOT=\"/Users/cain/.claude/plugins/cache/thedotmack/claude-mem/8.5.5\" node:*)",
+      "Bash(CLAUDE_PLUGIN_ROOT=\"/Users/cain/.claude/plugins/cache/thedotmack/claude-mem/8.5.5\" bun:*)"
     ]
   }
 }

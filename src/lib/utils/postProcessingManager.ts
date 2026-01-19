@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import type { WebGPURenderer } from 'three/webgpu'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { SSAOPass } from 'three/examples/jsm/postprocessing/SSAOPass.js'
@@ -33,12 +34,12 @@ export class PostProcessingManager {
 
 	private scene: THREE.Scene
 	private camera: THREE.Camera
-	private renderer: THREE.WebGLRenderer
+	private renderer: WebGPURenderer
 
 	constructor(
 		scene: THREE.Scene,
 		camera: THREE.Camera,
-		renderer: THREE.WebGLRenderer,
+		renderer: WebGPURenderer,
 		config: PostProcessingConfig
 	) {
 		this.scene = scene
@@ -46,6 +47,7 @@ export class PostProcessingManager {
 		this.renderer = renderer
 
 		// 創建 EffectComposer
+		// @ts-expect-error - WebGPURenderer compatibility with EffectComposer
 		this.composer = new EffectComposer(renderer)
 
 		// 1. RenderPass（基礎渲染，必須）
